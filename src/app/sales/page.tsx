@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { AuthGuard } from '@/components/auth-guard';
 import { AppShell } from '@/components/layout/app-shell';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,7 +32,8 @@ export default function SalesPage() {
   const todayTotal = mockSales.reduce((s, sale) => s + sale.total, 0);
 
   return (
-    <AppShell>
+    <AuthGuard>
+      <AppShell>
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -175,5 +177,6 @@ export default function SalesPage() {
         </Modal>
       </div>
     </AppShell>
+    </AuthGuard>
   );
 }

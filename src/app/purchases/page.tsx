@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { AuthGuard } from '@/components/auth-guard';
 import { AppShell } from '@/components/layout/app-shell';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,7 +28,8 @@ export default function PurchasesPage() {
   const totalSpent = mockPurchases.filter(p => p.status === 'received').reduce((s, p) => s + p.total, 0);
 
   return (
-    <AppShell>
+    <AuthGuard>
+      <AppShell>
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -135,5 +137,6 @@ export default function PurchasesPage() {
         </Modal>
       </div>
     </AppShell>
+    </AuthGuard>
   );
 }

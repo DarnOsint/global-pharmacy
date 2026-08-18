@@ -1,17 +1,18 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAppStore } from '@/lib/store';
+import { useAuthStore } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard, Package, ShoppingCart, Receipt,
   CreditCard, Users, BarChart3, AlertTriangle,
-  Settings, X, Pill
+  Settings, X, Pill, LogOut
 } from 'lucide-react';
 
 const navItems = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/inventory', label: 'Inventory', icon: Package },
   { href: '/sales', label: 'Sales', icon: ShoppingCart },
   { href: '/purchases', label: 'Purchases', icon: Receipt },
@@ -22,9 +23,23 @@ const navItems = [
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
+const roleBadge: Record<string, string> = {
+  admin: 'bg-red-100 text-red-700',
+  pharmacist: 'bg-green-100 text-green-700',
+  cashier: 'bg-yellow-100 text-yellow-700',
+  store_manager: 'bg-blue-100 text-blue-700',
+};
+
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { sidebarOpen, toggleSidebar } = useAppStore();
+  const { user, logout } = useAuthStore();
+
+  const handleLogout = () => {
+    logout();
+    router.push('/');
+  };
 
   return (
     <>
@@ -46,11 +61,11 @@ export function Sidebar() {
           <div className="w-9 h-9 rounded-lg bg-accent flex items-center justify-center">
             <Pill className="w-5 h-5 text-white" />
           </div>
-          <div>
+          <div className="flex-1">
             <h1 className="font-bold text-sm leading-tight">Global Pharmacy</h1>
             <p className="text-[10px] text-white/60">Management System</p>
           </div>
-          <button onClick={toggleSidebar} className="ml-auto lg:hidden">
+          <button onClick={toggleSidebar} className="lg:hidden">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -77,16 +92,27 @@ export function Sidebar() {
           })}
         </nav>
 
-        <div className="px-5 py-4 border-t border-white/10">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-xs font-bold text-accent-light">
-              GP
+        <div className="px-3 py-3 border-t border-white/10">
+          {user && (
+            <div className="flex items-center gap-3 px-2 mb-2">
+              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xs font-bold">
+                {user.first_name[0]}{user.last_name[0]}
+              </div>
+              <div className="flex-1 text-xs min-w-0">
+                <p className="font-medium truncate">{user.first_name} {user.last_name}</p>
+                <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium mt-0.5', roleBadge[user.role])}>
+                  {user.role.replace('_', ' ')}
+                </span>
+              </div>
             </div>
-            <div className="text-xs">
-              <p className="font-medium">Global Pharmacy</p>
-              <p className="text-white/50">Admin</p>
-            </div>
-          </div>
+          )}
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white/70 hover:bg-red-500/20 hover:text-red-300 transition-colors"
+          >
+            <LogOut className="w-5 h-5 shrink-0" />
+            Logout
+          </button>
         </div>
       </aside>
     </>

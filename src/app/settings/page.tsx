@@ -1,5 +1,6 @@
 'use client';
 
+import { AuthGuard } from '@/components/auth-guard';
 import { AppShell } from '@/components/layout/app-shell';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,8 @@ import { Settings, Store, Database, Bell, Shield, Download } from 'lucide-react'
 
 export default function SettingsPage() {
   return (
-    <AppShell>
+    <AuthGuard>
+      <AppShell>
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
@@ -129,5 +131,6 @@ export default function SettingsPage() {
         </div>
       </div>
     </AppShell>
+    </AuthGuard>
   );
 }

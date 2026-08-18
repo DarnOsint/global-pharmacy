@@ -186,3 +186,33 @@ CREATE POLICY "Allow all" ON purchase_items FOR ALL USING (true);
 CREATE POLICY "Allow all" ON expenses FOR ALL USING (true);
 CREATE POLICY "Allow all" ON staff FOR ALL USING (true);
 CREATE POLICY "Allow all" ON payroll FOR ALL USING (true);
+
+-- STAFF PINS (for POS login)
+CREATE TABLE staff_pins (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  staff_id UUID NOT NULL REFERENCES staff(id) ON DELETE CASCADE,
+  pin TEXT NOT NULL UNIQUE,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_staff_pins_pin ON staff_pins(pin);
+ALTER TABLE staff_pins ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all" ON staff_pins FOR ALL USING (true);
+
+-- Seed default PINs
+INSERT INTO staff (id, first_name, last_name, role, phone, email, hire_date, salary) VALUES
+  ('1', 'Chidinma', 'Eze', 'admin', '08012345678', 'chidinma@globalpharmacy.com', '2024-01-15', 180000),
+  ('2', 'Blessing', 'Okoro', 'pharmacist', '08023456789', 'blessing@globalpharmacy.com', '2024-03-20', 150000),
+  ('3', 'Ibrahim', 'Mohammed', 'pharmacist', '08034567890', 'ibrahim@globalpharmacy.com', '2024-06-10', 150000),
+  ('4', 'Ngozi', 'Adeyemi', 'cashier', '08045678901', 'ngozi@globalpharmacy.com', '2025-01-05', 95000),
+  ('5', 'Tunde', 'Olawale', 'store_manager', '08056789012', 'tunde@globalpharmacy.com', '2025-06-15', 120000)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO staff_pins (staff_id, pin) VALUES
+  ('1', '1234'),
+  ('2', '5678'),
+  ('3', '3456'),
+  ('4', '7890'),
+  ('5', '2345')
+ON CONFLICT (pin) DO NOTHING;
