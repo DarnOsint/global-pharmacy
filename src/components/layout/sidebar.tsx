@@ -12,6 +12,8 @@ import {
   Settings, X, Pill, LogOut
 } from 'lucide-react';
 
+import { useSettingsStore } from '@/lib/settings-store';
+
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/inventory', label: 'Inventory', icon: Package },
@@ -54,6 +56,7 @@ export function Sidebar() {
   const router = useRouter();
   const { sidebarOpen, toggleSidebar } = useAppStore();
   const { user, logout } = useAuthStore();
+  const settings = useSettingsStore();
   const [alertCount, setAlertCount] = useState(0);
 
   useEffect(() => {
@@ -84,11 +87,15 @@ export function Sidebar() {
         )}
       >
         <div className="flex items-center gap-3 px-5 h-16 border-b border-white/10">
-          <div className="w-9 h-9 rounded-lg bg-accent flex items-center justify-center">
-            <Pill className="w-5 h-5 text-white" />
+          <div className="w-9 h-9 rounded-lg bg-accent flex items-center justify-center overflow-hidden">
+            {settings.logoBase64 ? (
+              <img src={settings.logoBase64} alt="Logo" className="w-full h-full object-contain" />
+            ) : (
+              <Pill className="w-5 h-5 text-white" />
+            )}
           </div>
           <div className="flex-1">
-            <h1 className="font-bold text-sm leading-tight">Global Pharmacy</h1>
+            <h1 className="font-bold text-sm leading-tight">{settings.storeName || 'Global Pharmacy'}</h1>
             <p className="text-[10px] text-white/60">Management System</p>
           </div>
           <button onClick={toggleSidebar} className="lg:hidden">

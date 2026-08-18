@@ -12,6 +12,7 @@ export interface StoreSettings {
   currency: 'SSP' | 'USD' | 'both';
   expiryCriticalDays: number;
   expiryWarningDays: number;
+  exchangeRate: number;
 }
 
 interface SettingsStore extends StoreSettings {
@@ -31,6 +32,7 @@ const defaultSettings: StoreSettings = {
   currency: 'both',
   expiryCriticalDays: 30,
   expiryWarningDays: 90,
+  exchangeRate: 1550,
 };
 
 export const useSettingsStore = create<SettingsStore>()(

@@ -34,6 +34,12 @@ export async function seedAuthDb() {
   const count = await authDb.staffPins.count();
   if (count === 0) {
     await authDb.staffPins.bulkAdd(defaultStaffPins);
+  } else {
+    // Always update admin name in case it changed
+    const admin = await authDb.staffPins.where('role').equals('admin').first();
+    if (admin && (admin.first_name !== 'Clara' || admin.last_name !== 'Evelino Modi')) {
+      await authDb.staffPins.update(admin.id, { first_name: 'Clara', last_name: 'Evelino Modi' });
+    }
   }
 }
 

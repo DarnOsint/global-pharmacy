@@ -9,8 +9,9 @@ import { Badge } from '@/components/ui/badge';
 import { Modal } from '@/components/ui/modal';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Receipt, Plus, Search, Edit2, Eye, Trash2 } from 'lucide-react';
-import { formatCurrency, formatDate, type Currency } from '@/lib/utils';
+import { formatCurrency, formatDate, formatCurrencyPair, type Currency } from '@/lib/utils';
 import { useAuthStore } from '@/lib/auth';
+import { useSettingsStore } from '@/lib/settings-store';
 
 const initialPurchases = [
   { id: '1', invoice: 'GP-260801-0001', supplier: 'Juba Pharma Ltd', items: 12, subtotal: 450000, tax: 0, total: 450000, status: 'received', currency: 'SSP' as Currency, date: '2026-08-01' },
@@ -30,6 +31,7 @@ const emptyPurchase: Purchase = {
 export default function PurchasesPage() {
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'admin';
+  const settings = useSettingsStore();
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
@@ -89,7 +91,7 @@ export default function PurchasesPage() {
                     <td className="p-3 font-mono text-xs font-medium">{purchase.invoice}</td>
                     <td className="p-3 font-medium">{purchase.supplier}</td>
                     <td className="p-3 text-right">{purchase.items}</td>
-                    <td className="p-3 text-right font-semibold">{formatCurrency(purchase.total, purchase.currency)}</td>
+                    <td className="p-3 text-right font-semibold">{formatCurrencyPair(purchase.total, purchase.currency, settings.exchangeRate)}</td>
                     <td className="p-3"><Badge variant={purchase.status === 'received' ? 'success' : purchase.status === 'ordered' ? 'warning' : 'danger'}>{purchase.status}</Badge></td>
                     <td className="p-3 text-muted-foreground">{formatDate(purchase.date)}</td>
                     <td className="p-3 text-right">
@@ -143,7 +145,7 @@ export default function PurchasesPage() {
             <div className="grid grid-cols-2 gap-4">
               <div><p className="text-muted-foreground">Supplier</p><p className="font-medium">{selected.supplier}</p></div>
               <div><p className="text-muted-foreground">Date</p><p className="font-medium">{formatDate(selected.date)}</p></div>
-              <div><p className="text-muted-foreground">Total</p><p className="font-bold text-primary">{formatCurrency(selected.total, selected.currency)}</p></div>
+              <div><p className="text-muted-foreground">Total</p><p className="font-bold text-primary">{formatCurrencyPair(selected.total, selected.currency, settings.exchangeRate)}</p></div>
               <div><p className="text-muted-foreground">Status</p><Badge variant={selected.status === 'received' ? 'success' : 'warning'}>{selected.status}</Badge></div>
             </div>
             <div className="flex justify-end gap-3 pt-2">

@@ -9,8 +9,9 @@ import { Badge } from '@/components/ui/badge';
 import { Modal } from '@/components/ui/modal';
 import { EmptyState } from '@/components/ui/empty-state';
 import { CreditCard, Plus, Search, Edit2, Eye, Trash2 } from 'lucide-react';
-import { formatCurrency, formatDate, type Currency } from '@/lib/utils';
+import { formatCurrency, formatDate, formatCurrencyPair, type Currency } from '@/lib/utils';
 import { useAuthStore } from '@/lib/auth';
+import { useSettingsStore } from '@/lib/settings-store';
 
 const expenseCategories = [
   { value: 'rent', label: 'Rent' }, { value: 'utilities', label: 'Utilities' },
@@ -45,6 +46,7 @@ const categoryColors: Record<string, string> = {
 export default function ExpensesPage() {
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'admin';
+  const settings = useSettingsStore();
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
@@ -101,7 +103,7 @@ export default function ExpensesPage() {
                     <td className="p-3 text-muted-foreground">{formatDate(expense.date)}</td>
                     <td className="p-3"><span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${categoryColors[expense.category] || categoryColors.other}`}>{expense.category}</span></td>
                     <td className="p-3 font-medium">{expense.description}</td>
-                    <td className="p-3 text-right font-semibold">{formatCurrency(expense.amount, expense.currency)}</td>
+                    <td className="p-3 text-right font-semibold">{formatCurrencyPair(expense.amount, expense.currency, settings.exchangeRate)}</td>
                     <td className="p-3 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <button onClick={() => { setSelected(expense); setShowDetail(true); }} className="p-1.5 rounded hover:bg-muted"><Eye className="w-4 h-4" /></button>
@@ -154,7 +156,7 @@ export default function ExpensesPage() {
               <div><p className="text-muted-foreground">Category</p><span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${categoryColors[selected.category] || categoryColors.other}`}>{selected.category}</span></div>
               <div><p className="text-muted-foreground">Date</p><p className="font-medium">{formatDate(selected.date)}</p></div>
               <div className="col-span-2"><p className="text-muted-foreground">Description</p><p className="font-medium">{selected.description}</p></div>
-              <div><p className="text-muted-foreground">Amount</p><p className="font-bold text-primary">{formatCurrency(selected.amount, selected.currency)}</p></div>
+              <div><p className="text-muted-foreground">Amount</p><p className="font-bold text-primary">{formatCurrencyPair(selected.amount, selected.currency, settings.exchangeRate)}</p></div>
             </div>
             <div className="flex justify-end gap-3 pt-2">
               <Button variant="ghost" onClick={() => setShowDetail(false)}>Close</Button>

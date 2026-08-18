@@ -28,6 +28,19 @@ export function formatCurrency(amount: number, currency: Currency = 'SSP'): stri
   return `SSP ${amount.toLocaleString('en-SS', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
 
+export function convertCurrency(amount: number, from: Currency, to: Currency, rate: number): number {
+  if (from === to) return amount;
+  if (from === 'USD' && to === 'SSP') return Math.round(amount * rate);
+  if (from === 'SSP' && to === 'USD') return Number((amount / rate).toFixed(2));
+  return amount;
+}
+
+export function formatCurrencyPair(amount: number, currency: Currency, rate: number): string {
+  const other: Currency = currency === 'SSP' ? 'USD' : 'SSP';
+  const converted = convertCurrency(amount, currency, other, rate);
+  return `${formatCurrency(amount, currency)} (${formatCurrency(converted, other)})`;
+}
+
 export function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-NG', {
     year: 'numeric',

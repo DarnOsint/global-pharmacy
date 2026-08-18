@@ -7,7 +7,8 @@ import {
   Package, ShoppingCart, CreditCard, AlertTriangle,
   TrendingUp
 } from 'lucide-react';
-import { formatCurrency, formatDate, getExpiryStatus } from '@/lib/utils';
+import { formatCurrency, formatDate, getExpiryStatus, formatCurrencyPair } from '@/lib/utils';
+import { useSettingsStore } from '@/lib/settings-store';
 
 const recentSales = [
   { id: '1', customer: 'Amina Deng', total: 35000, currency: 'SSP', items: 5, date: new Date().toISOString() },
@@ -28,6 +29,7 @@ const expiringItems = [
 ];
 
 export default function DashboardContent() {
+  const settings = useSettingsStore();
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -49,7 +51,7 @@ export default function DashboardContent() {
                     <p className="text-xs text-muted-foreground">{sale.items} items</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-sm text-primary">{formatCurrency(sale.total, sale.currency as 'SSP' | 'USD')}</p>
+                    <p className="font-semibold text-sm text-primary">{formatCurrencyPair(sale.total, sale.currency as 'SSP' | 'USD', settings.exchangeRate)}</p>
                     <p className="text-xs text-muted-foreground">{formatDate(sale.date)}</p>
                   </div>
                 </div>

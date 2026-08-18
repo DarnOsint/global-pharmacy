@@ -11,8 +11,9 @@ import { Badge } from '@/components/ui/badge';
 import { Modal } from '@/components/ui/modal';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Package, Plus, Search, Edit2, Trash2, Eye } from 'lucide-react';
-import { formatCurrency, formatDate, daysUntilExpiry, getExpiryStatus, type Currency } from '@/lib/utils';
+import { formatCurrency, formatDate, daysUntilExpiry, getExpiryStatus, formatCurrencyPair, type Currency } from '@/lib/utils';
 import { useAuthStore } from '@/lib/auth';
+import { useSettingsStore } from '@/lib/settings-store';
 
 const categories = [
   { value: 'all', label: 'All Categories' },
@@ -61,6 +62,7 @@ const emptyProduct: Product = {
 export default function InventoryPage() {
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'admin';
+  const settings = useSettingsStore();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -143,7 +145,7 @@ export default function InventoryPage() {
                       <td className="p-3 text-muted-foreground font-mono text-xs">{product.sku}</td>
                       <td className="p-3"><Badge variant="info">{product.category}</Badge></td>
                       <td className="p-3 text-right">
-                        <span className="font-medium">{formatCurrency(product.unit_price, product.currency)}</span>
+                        <span className="font-medium">{formatCurrencyPair(product.unit_price, product.currency, settings.exchangeRate)}</span>
                       </td>
                       <td className="p-3 text-right">
                         <Badge variant={isLow ? 'danger' : 'success'}>{product.quantity_in_stock}</Badge>

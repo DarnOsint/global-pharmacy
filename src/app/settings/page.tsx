@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useSettingsStore } from '@/lib/settings-store';
 import { useAuthStore } from '@/lib/auth';
-import { Settings, Store, Database, Bell, Shield, Upload, X, Image, User, Save, AlertTriangle } from 'lucide-react';
+import { Settings, Store, Database, Bell, Shield, Upload, X, Image, User, Save, AlertTriangle, DollarSign } from 'lucide-react';
 
 export default function SettingsPage() {
   const { user } = useAuthStore();
@@ -24,6 +24,7 @@ export default function SettingsPage() {
   const [tagline, setTagline] = useState(settings.tagline);
   const [criticalDays, setCriticalDays] = useState(settings.expiryCriticalDays);
   const [warningDays, setWarningDays] = useState(settings.expiryWarningDays);
+  const [exchangeRate, setExchangeRate] = useState(settings.exchangeRate);
   const [saved, setSaved] = useState(false);
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -52,6 +53,7 @@ export default function SettingsPage() {
     settings.updateSettings({
       storeName, address, phone, email, licenseNumber, tagline,
       expiryCriticalDays: criticalDays, expiryWarningDays: warningDays,
+      exchangeRate,
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -147,6 +149,36 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Exchange Rate */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-primary" />
+              Exchange Rate — USD / SSP
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Set the current exchange rate. All prices display in both currencies using this rate.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-end">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-foreground">1 USD = ? SSP</label>
+                <input type="number" min={1} step={10} value={exchangeRate} onChange={e => setExchangeRate(Number(e.target.value))} className="flex h-12 w-full rounded-lg border border-border bg-white px-4 text-lg font-bold focus:outline-none focus:ring-2 focus:ring-primary" />
+              </div>
+              <div className="p-4 rounded-lg bg-muted/50 border border-border">
+                <p className="text-xs text-muted-foreground mb-1">Preview</p>
+                <p className="text-lg font-bold text-primary">$1.00 = SSP {exchangeRate.toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground mt-1">$100.00 = SSP {(100 * exchangeRate).toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground">SSP {exchangeRate.toLocaleString()} = $1.00</p>
+              </div>
+              <div className="space-y-2">
+                <Button onClick={handleSave}>Save Rate</Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Admin Profile */}
         <Card>

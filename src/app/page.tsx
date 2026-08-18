@@ -5,9 +5,11 @@ import { useRouter } from 'next/navigation';
 import { Pill, Delete, Loader2, AlertCircle } from 'lucide-react';
 import { useAuthStore, type AuthUser } from '@/lib/auth';
 import { seedAuthDb, verifyPinOffline } from '@/lib/auth-db';
+import { useSettingsStore } from '@/lib/settings-store';
 
 export default function PinLoginPage() {
   const router = useRouter();
+  const settings = useSettingsStore();
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -82,10 +84,14 @@ export default function PinLoginPage() {
     <div className="min-h-screen bg-gradient-to-br from-primary via-primary-dark to-primary-900 flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-10">
-          <div className="w-20 h-20 rounded-2xl bg-accent mx-auto mb-5 flex items-center justify-center shadow-lg">
-            <Pill className="w-10 h-10 text-white" />
+          <div className="w-20 h-20 rounded-2xl bg-accent mx-auto mb-5 flex items-center justify-center shadow-lg overflow-hidden">
+            {settings.logoBase64 ? (
+              <img src={settings.logoBase64} alt="Logo" className="w-full h-full object-contain" />
+            ) : (
+              <Pill className="w-10 h-10 text-white" />
+            )}
           </div>
-          <h1 className="text-2xl font-bold text-white">Global Pharmacy</h1>
+          <h1 className="text-2xl font-bold text-white">{settings.storeName || 'Global Pharmacy'}</h1>
           <p className="text-white/60 text-sm mt-1">Enter your PIN to start</p>
         </div>
 

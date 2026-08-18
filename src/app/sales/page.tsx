@@ -9,8 +9,9 @@ import { Badge } from '@/components/ui/badge';
 import { Modal } from '@/components/ui/modal';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ShoppingCart, Plus, Search, Edit2, Eye, Trash2 } from 'lucide-react';
-import { formatCurrency, formatDate, type Currency } from '@/lib/utils';
+import { formatCurrency, formatDate, formatCurrencyPair, type Currency } from '@/lib/utils';
 import { useAuthStore } from '@/lib/auth';
+import { useSettingsStore } from '@/lib/settings-store';
 
 const paymentMethods = [
   { value: 'cash', label: 'Cash' }, { value: 'card', label: 'Card' },
@@ -36,6 +37,7 @@ const emptySale: Sale = {
 export default function SalesPage() {
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'admin';
+  const settings = useSettingsStore();
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
@@ -96,7 +98,7 @@ export default function SalesPage() {
                     <td className="p-3 font-mono text-xs font-medium">{sale.invoice}</td>
                     <td className="p-3 font-medium">{sale.customer}</td>
                     <td className="p-3 text-right">{sale.items}</td>
-                    <td className="p-3 text-right font-semibold">{formatCurrency(sale.total, sale.currency)}</td>
+                    <td className="p-3 text-right font-semibold">{formatCurrencyPair(sale.total, sale.currency, settings.exchangeRate)}</td>
                     <td className="p-3"><Badge variant="default">{sale.payment_method}</Badge></td>
                     <td className="p-3"><Badge variant={sale.status === 'completed' ? 'success' : sale.status === 'returned' ? 'danger' : 'warning'}>{sale.status}</Badge></td>
                     <td className="p-3 text-muted-foreground">{formatDate(sale.date)}</td>
@@ -155,9 +157,9 @@ export default function SalesPage() {
             <div className="grid grid-cols-2 gap-4">
               <div><p className="text-muted-foreground">Customer</p><p className="font-medium">{selected.customer}</p></div>
               <div><p className="text-muted-foreground">Date</p><p className="font-medium">{formatDate(selected.date)}</p></div>
-              <div><p className="text-muted-foreground">Subtotal</p><p className="font-medium">{formatCurrency(selected.subtotal, selected.currency)}</p></div>
-              <div><p className="text-muted-foreground">Discount</p><p className="font-medium text-danger">-{formatCurrency(selected.discount, selected.currency)}</p></div>
-              <div><p className="text-muted-foreground">Total</p><p className="font-bold text-primary">{formatCurrency(selected.total, selected.currency)}</p></div>
+              <div><p className="text-muted-foreground">Subtotal</p><p className="font-medium">{formatCurrencyPair(selected.subtotal, selected.currency, settings.exchangeRate)}</p></div>
+              <div><p className="text-muted-foreground">Discount</p><p className="font-medium text-danger">-{formatCurrencyPair(selected.discount, selected.currency, settings.exchangeRate)}</p></div>
+              <div><p className="text-muted-foreground">Total</p><p className="font-bold text-primary">{formatCurrencyPair(selected.total, selected.currency, settings.exchangeRate)}</p></div>
               <div><p className="text-muted-foreground">Payment</p><Badge variant="default">{selected.payment_method}</Badge></div>
               <div><p className="text-muted-foreground">Status</p><Badge variant={selected.status === 'completed' ? 'success' : 'danger'}>{selected.status}</Badge></div>
             </div>
