@@ -12,6 +12,7 @@ export interface Product {
   quantity_in_stock: number;
   reorder_level: number;
   expiry_date: string;
+  alert_days: number;
   batch_number: string;
   manufacturer: string;
   description: string | null;

@@ -1,27 +1,131 @@
 'use client';
 
+import { useState, useRef } from 'react';
 import { AuthGuard } from '@/components/auth-guard';
 import { AppShell } from '@/components/layout/app-shell';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Settings, Store, Database, Bell, Shield, Download } from 'lucide-react';
+import { useSettingsStore } from '@/lib/settings-store';
+import { useAuthStore } from '@/lib/auth';
+import { Settings, Store, Database, Bell, Shield, Upload, X, Image, User, Save, AlertTriangle } from 'lucide-react';
 
 export default function SettingsPage() {
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'admin';
+  const settings = useSettingsStore();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [storeName, setStoreName] = useState(settings.storeName);
+  const [address, setAddress] = useState(settings.address);
+  const [phone, setPhone] = useState(settings.phone);
+  const [email, setEmail] = useState(settings.email);
+  const [licenseNumber, setLicenseNumber] = useState(settings.licenseNumber);
+  const [tagline, setTagline] = useState(settings.tagline);
+  const [criticalDays, setCriticalDays] = useState(settings.expiryCriticalDays);
+  const [warningDays, setWarningDays] = useState(settings.expiryWarningDays);
+  const [saved, setSaved] = useState(false);
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image must be under 5MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const base64 = ev.target?.result as string;
+      settings.setLogo(base64);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSave = () => {
+    settings.updateSettings({
+      storeName, address, phone, email, licenseNumber, tagline,
+      expiryCriticalDays: criticalDays, expiryWarningDays: warningDays,
+    });
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
   return (
     <AuthGuard>
       <AppShell>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Settings className="w-6 h-6" />
-            Settings
-          </h1>
-          <p className="text-sm text-muted-foreground">Configure Global Pharmacy system settings</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <Settings className="w-6 h-6" />
+              Admin Panel
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {isAdmin ? `Logged in as ${user?.first_name} ${user?.last_name} (Admin)` : 'System settings'}
+            </p>
+          </div>
+          {saved && (
+            <div className="flex items-center gap-2 text-success text-sm font-medium">
+              <Save className="w-4 h-4" /> Saved!
+            </div>
+          )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Logo Upload */}
+          <Card className="lg:col-span-1">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Image className="w-5 h-5 text-primary" />
+                Store Logo
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col items-center gap-4">
+                <div
+                  className="w-40 h-40 rounded-2xl border-2 border-dashed border-border flex items-center justify-center overflow-hidden bg-muted/30 cursor-pointer hover:border-primary transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {settings.logoBase64 ? (
+                    <img src={settings.logoBase64} alt="Store Logo" className="w-full h-full object-contain p-2" />
+                  ) : (
+                    <div className="text-center">
+                      <Upload className="w-8 h-8 mx-auto text-muted-foreground" />
+                      <p className="text-xs text-muted-foreground mt-2">Click to upload</p>
+                      <p className="text-[10px] text-muted-foreground">PNG, JPG up to 5MB</p>
+                    </div>
+                  )}
+                </div>
+
+                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                    <Upload className="w-4 h-4 mr-2" /> Upload
+                  </Button>
+                  {settings.logoBase64 && (
+                    <Button variant="ghost" size="sm" onClick={() => settings.clearLogo()}>
+                      <X className="w-4 h-4 mr-2" /> Remove
+                    </Button>
+                  )}
+                </div>
+
+                <p className="text-[10px] text-muted-foreground text-center">
+                  This logo appears on the login screen and sidebar
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Store Info */}
+          <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Store className="w-5 h-5 text-primary" />
@@ -29,60 +133,104 @@ export default function SettingsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-                <Input label="Store Name" id="store_name" defaultValue="Global Pharmacy" />
-                <Input label="Address" id="address" defaultValue="Juba, South Sudan" />
-                <Input label="Phone" id="phone" defaultValue="+211920123456" />
-                <Input label="Email" id="email" type="email" defaultValue="info@globalpharmacy.ss" />
-                <Input label="License Number" id="license" defaultValue="SSPHA/GP/2024/001" />
-                <Button type="submit">Save Changes</Button>
-              </form>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Database className="w-5 h-5 text-primary" />
-                Data & Offline
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
               <div className="space-y-4">
-                <div className="p-4 rounded-lg bg-primary-50 border border-primary-200">
-                  <p className="text-sm font-medium text-primary">Offline Storage</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    All data is stored locally using IndexedDB. When online, changes sync automatically to Supabase.
-                  </p>
-                  <div className="mt-3 flex gap-2">
-                    <Button variant="outline" size="sm">
-                      <Download className="w-4 h-4 mr-2" /> Export Data
-                    </Button>
-                    <Button variant="outline" size="sm">Import Data</Button>
-                  </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Input label="Store Name" id="store_name" value={storeName} onChange={e => setStoreName(e.target.value)} />
+                  <Input label="Tagline" id="tagline" value={tagline} onChange={e => setTagline(e.target.value)} />
+                  <Input label="Address" id="address" value={address} onChange={e => setAddress(e.target.value)} />
+                  <Input label="Phone" id="phone" value={phone} onChange={e => setPhone(e.target.value)} />
+                  <Input label="Email" id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} />
+                  <Input label="License Number" id="license" value={licenseNumber} onChange={e => setLicenseNumber(e.target.value)} />
                 </div>
-                <div className="flex items-center justify-between p-3 rounded-lg border border-border">
-                  <div>
-                    <p className="text-sm font-medium">Auto-sync</p>
-                    <p className="text-xs text-muted-foreground">Sync data when online</p>
-                  </div>
-                  <div className="w-10 h-6 bg-primary rounded-full relative cursor-pointer">
-                    <div className="w-5 h-5 bg-white rounded-full absolute right-0.5 top-0.5 shadow" />
-                  </div>
-                </div>
-                <div className="flex items-center justify-between p-3 rounded-lg border border-border">
-                  <div>
-                    <p className="text-sm font-medium">Backup reminders</p>
-                    <p className="text-xs text-muted-foreground">Remind to backup data weekly</p>
-                  </div>
-                  <div className="w-10 h-6 bg-primary rounded-full relative cursor-pointer">
-                    <div className="w-5 h-5 bg-white rounded-full absolute right-0.5 top-0.5 shadow" />
-                  </div>
-                </div>
+                <Button onClick={handleSave}>Save Changes</Button>
               </div>
             </CardContent>
           </Card>
+        </div>
 
+        {/* Admin Profile */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="w-5 h-5 text-primary" />
+              Admin Profile
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-white text-xl font-bold">
+                  {user?.first_name?.[0]}{user?.last_name?.[0]}
+                </div>
+                <div>
+                  <p className="font-semibold text-lg">{user?.first_name} {user?.last_name}</p>
+                  <p className="text-sm text-muted-foreground capitalize">{user?.role?.replace('_', ' ')}</p>
+                  <p className="text-xs text-muted-foreground mt-1">PIN: {user?.pin}</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm"><span className="text-muted-foreground">Access Level:</span> <span className="font-medium">Full Admin</span></p>
+                <p className="text-sm"><span className="text-muted-foreground">Can manage:</span> <span className="font-medium">Staff, Inventory, Sales, Reports, Settings</span></p>
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm"><span className="text-muted-foreground">Status:</span> <span className="font-medium text-success">Active</span></p>
+                <p className="text-sm"><span className="text-muted-foreground">System:</span> <span className="font-medium">Global Pharmacy v1.0</span></p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Expiry Alert Configuration */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-accent" />
+              Expiry Alert Settings
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Set how many days before expiry to trigger alerts. You can also enter a specific date for individual products.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-foreground">Critical Alert (days before expiry)</label>
+                <input type="number" min={1} max={3650} value={criticalDays} onChange={e => setCriticalDays(Number(e.target.value))} className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+                <p className="text-xs text-muted-foreground">Products expiring within this period show as <span className="text-danger font-medium">Critical</span></p>
+                <div className="flex gap-2 flex-wrap">
+                  {[7, 14, 30, 60, 90, 180, 365].map(d => (
+                    <button key={d} onClick={() => setCriticalDays(d)} className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${criticalDays === d ? 'bg-red-100 text-red-700 border-red-300' : 'bg-white text-muted-foreground border-border hover:border-red-300'}`}>
+                      {d} days
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-foreground">Warning Alert (days before expiry)</label>
+                <input type="number" min={1} max={3650} value={warningDays} onChange={e => setWarningDays(Number(e.target.value))} className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+                <p className="text-xs text-muted-foreground">Products expiring within this period show as <span className="text-yellow-600 font-medium">Warning</span></p>
+                <div className="flex gap-2 flex-wrap">
+                  {[30, 60, 90, 180, 365, 730, 1095].map(d => (
+                    <button key={d} onClick={() => setWarningDays(d)} className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${warningDays === d ? 'bg-yellow-100 text-yellow-700 border-yellow-300' : 'bg-white text-muted-foreground border-border hover:border-yellow-300'}`}>
+                      {d >= 365 ? `${d/365} yr` : `${d} days`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="mt-4 p-3 rounded-lg bg-muted/50 border border-border">
+              <p className="text-sm font-medium">Preview:</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Critical = expires within <span className="font-medium text-danger">{criticalDays} days</span> | 
+                Warning = expires within <span className="font-medium text-yellow-600">{warningDays} days</span>
+              </p>
+            </div>
+            <Button onClick={handleSave} className="mt-4">Save Alert Settings</Button>
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Notifications */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -112,19 +260,44 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
+          {/* Data & Security */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Shield className="w-5 h-5 text-primary" />
-                Security
+                Data & Security
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <Input label="Current Password" id="current_pwd" type="password" />
-                <Input label="New Password" id="new_pwd" type="password" />
-                <Input label="Confirm Password" id="confirm_pwd" type="password" />
-                <Button>Update Password</Button>
+                <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                  <p className="text-sm font-medium text-primary">Offline Storage</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    All data is stored locally using IndexedDB. When online, changes sync automatically to Supabase.
+                  </p>
+                  <div className="mt-3 flex gap-2">
+                    <Button variant="outline" size="sm">Export Data</Button>
+                    <Button variant="outline" size="sm">Import Data</Button>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg border border-border">
+                  <div>
+                    <p className="text-sm font-medium">Auto-sync</p>
+                    <p className="text-xs text-muted-foreground">Sync data when online</p>
+                  </div>
+                  <div className="w-10 h-6 bg-primary rounded-full relative cursor-pointer">
+                    <div className="w-5 h-5 bg-white rounded-full absolute right-0.5 top-0.5 shadow" />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg border border-border">
+                  <div>
+                    <p className="text-sm font-medium">Backup reminders</p>
+                    <p className="text-xs text-muted-foreground">Remind to backup data weekly</p>
+                  </div>
+                  <div className="w-10 h-6 bg-primary rounded-full relative cursor-pointer">
+                    <div className="w-5 h-5 bg-white rounded-full absolute right-0.5 top-0.5 shadow" />
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
