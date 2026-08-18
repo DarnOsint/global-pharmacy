@@ -8,6 +8,7 @@ export interface Product {
   barcode: string | null;
   unit_price: number;
   cost_price: number;
+  currency: 'SSP' | 'USD';
   quantity_in_stock: number;
   reorder_level: number;
   expiry_date: string;

@@ -22,16 +22,14 @@ export class AuthDB extends Dexie {
 
 export const authDb = new AuthDB();
 
-// Default staff with PINs for offline use
 export const defaultStaffPins: StaffPin[] = [
-  { id: '1', staff_id: '1', first_name: 'Chidinma', last_name: 'Eze', role: 'admin', pin: '1234' },
-  { id: '2', staff_id: '2', first_name: 'Blessing', last_name: 'Okoro', role: 'pharmacist', pin: '5678' },
-  { id: '3', staff_id: '3', first_name: 'Ibrahim', last_name: 'Mohammed', role: 'pharmacist', pin: '3456' },
-  { id: '4', staff_id: '4', first_name: 'Ngozi', last_name: 'Adeyemi', role: 'cashier', pin: '7890' },
-  { id: '5', staff_id: '5', first_name: 'Tunde', last_name: 'Olawale', role: 'store_manager', pin: '2345' },
+  { id: '1', staff_id: 'a0000000-0000-0000-0000-000000000001', first_name: 'Ajak', last_name: 'Deng', role: 'admin', pin: '1234' },
+  { id: '2', staff_id: 'a0000000-0000-0000-0000-000000000002', first_name: 'Nyamal', last_name: 'Kuol', role: 'pharmacist', pin: '5678' },
+  { id: '3', staff_id: 'a0000000-0000-0000-0000-000000000003', first_name: 'Bol', last_name: 'Mawut', role: 'pharmacist', pin: '3456' },
+  { id: '4', staff_id: 'a0000000-0000-0000-0000-000000000004', first_name: 'Akello', last_name: 'James', role: 'cashier', pin: '7890' },
+  { id: '5', staff_id: 'a0000000-0000-0000-0000-000000000005', first_name: 'Kur', last_name: 'Lual', role: 'store_manager', pin: '2345' },
 ];
 
-// Seed default staff if DB is empty
 export async function seedAuthDb() {
   const count = await authDb.staffPins.count();
   if (count === 0) {
@@ -39,7 +37,6 @@ export async function seedAuthDb() {
   }
 }
 
-// Verify PIN offline
 export async function verifyPinOffline(pin: string): Promise<StaffPin | null> {
   const staff = await authDb.staffPins.where('pin').equals(pin).first();
   return staff || null;

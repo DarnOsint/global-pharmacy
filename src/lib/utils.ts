@@ -19,11 +19,21 @@ export function generateInvoiceNumber(prefix: string): string {
   return `${prefix}-${dateStr}-${random}`;
 }
 
-export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-NG', {
+export type Currency = 'SSP' | 'USD';
+
+export function formatCurrency(amount: number, currency: Currency = 'SSP'): string {
+  if (currency === 'USD') {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+    }).format(amount);
+  }
+  return new Intl.NumberFormat('en-SS', {
     style: 'currency',
-    currency: 'NGN',
-    minimumFractionDigits: 2,
+    currency: 'SSP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   }).format(amount);
 }
 

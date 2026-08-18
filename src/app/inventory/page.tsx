@@ -3,15 +3,15 @@
 import { useState } from 'react';
 import { AuthGuard } from '@/components/auth-guard';
 import { AppShell } from '@/components/layout/app-shell';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Modal } from '@/components/ui/modal';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Package, Plus, Search, Filter, Edit2, Trash2, Eye } from 'lucide-react';
-import { formatCurrency, formatDate, daysUntilExpiry, getExpiryStatus } from '@/lib/utils';
+import { Package, Plus, Search, Edit2, Trash2, Eye } from 'lucide-react';
+import { formatCurrency, formatDate, daysUntilExpiry, getExpiryStatus, type Currency } from '@/lib/utils';
 
 const categories = [
   { value: 'all', label: 'All Categories' },
@@ -26,13 +26,20 @@ const categories = [
   { value: 'other', label: 'Other' },
 ];
 
+const currencyOptions = [
+  { value: 'SSP', label: 'SSP (South Sudanese Pound)' },
+  { value: 'USD', label: 'USD (US Dollar)' },
+];
+
 const mockProducts = [
-  { id: '1', name: 'Amoxicillin 500mg', generic_name: 'Amoxicillin', category: 'antibiotics', sku: 'AMX-500', unit_price: 2500, cost_price: 1800, quantity_in_stock: 5, reorder_level: 20, expiry_date: '2026-12-15', batch_number: 'BCH-001', manufacturer: 'Emzor', is_active: true },
-  { id: '2', name: 'Paracetamol 500mg', generic_name: 'Acetaminophen', category: 'analgesics', sku: 'PCM-500', unit_price: 500, cost_price: 300, quantity_in_stock: 150, reorder_level: 50, expiry_date: '2027-06-20', batch_number: 'BCH-002', manufacturer: 'Emzor', is_active: true },
-  { id: '3', name: 'Metformin 850mg', generic_name: 'Metformin HCl', category: 'diabetes', sku: 'MET-850', unit_price: 1800, cost_price: 1200, quantity_in_stock: 3, reorder_level: 15, expiry_date: '2026-09-10', batch_number: 'BCH-003', manufacturer: 'Nigerian Cosmos', is_active: true },
-  { id: '4', name: 'Lisinopril 10mg', generic_name: 'Lisinopril', category: 'cardiovascular', sku: 'LIS-10', unit_price: 1200, cost_price: 800, quantity_in_stock: 12, reorder_level: 30, expiry_date: '2027-03-25', batch_number: 'BCH-004', manufacturer: 'Swiss Pharma', is_active: true },
-  { id: '5', name: 'Vitamin C 1000mg', generic_name: 'Ascorbic Acid', category: 'vitamins', sku: 'VTC-1000', unit_price: 800, cost_price: 450, quantity_in_stock: 85, reorder_level: 30, expiry_date: '2027-08-30', batch_number: 'BCH-005', manufacturer: 'Emzor', is_active: true },
-  { id: '6', name: 'Ibuprofen 400mg', generic_name: 'Ibuprofen', category: 'analgesics', sku: 'IBU-400', unit_price: 700, cost_price: 400, quantity_in_stock: 45, reorder_level: 25, expiry_date: '2026-08-25', batch_number: 'BCH-006', manufacturer: 'May & Baker', is_active: true },
+  { id: '1', name: 'Amoxicillin 500mg', generic_name: 'Amoxicillin', category: 'antibiotics', sku: 'AMX-500', unit_price: 8500, cost_price: 6000, currency: 'SSP' as Currency, quantity_in_stock: 45, reorder_level: 20, expiry_date: '2027-06-15', batch_number: 'BCH-001', manufacturer: 'Juba Pharma', is_active: true },
+  { id: '2', name: 'Paracetamol 500mg', generic_name: 'Acetaminophen', category: 'analgesics', sku: 'PCM-500', unit_price: 2000, cost_price: 1200, currency: 'SSP' as Currency, quantity_in_stock: 200, reorder_level: 50, expiry_date: '2027-12-20', batch_number: 'BCH-002', manufacturer: 'Juba Pharma', is_active: true },
+  { id: '3', name: 'Metformin 850mg', generic_name: 'Metformin HCl', category: 'diabetes', sku: 'MET-850', unit_price: 5.50, cost_price: 3.80, currency: 'USD' as Currency, quantity_in_stock: 30, reorder_level: 15, expiry_date: '2027-03-10', batch_number: 'BCH-003', manufacturer: 'Medipharm', is_active: true },
+  { id: '4', name: 'Lisinopril 10mg', generic_name: 'Lisinopril', category: 'cardiovascular', sku: 'LIS-10', unit_price: 4.00, cost_price: 2.50, currency: 'USD' as Currency, quantity_in_stock: 60, reorder_level: 30, expiry_date: '2027-09-25', batch_number: 'BCH-004', manufacturer: 'Cipla', is_active: true },
+  { id: '5', name: 'Vitamin C 1000mg', generic_name: 'Ascorbic Acid', category: 'vitamins', sku: 'VTC-1000', unit_price: 3000, cost_price: 1800, currency: 'SSP' as Currency, quantity_in_stock: 120, reorder_level: 30, expiry_date: '2027-08-30', batch_number: 'BCH-005', manufacturer: 'VitaHealth', is_active: true },
+  { id: '6', name: 'Ibuprofen 400mg', generic_name: 'Ibuprofen', category: 'analgesics', sku: 'IBU-400', unit_price: 3.00, cost_price: 1.80, currency: 'USD' as Currency, quantity_in_stock: 8, reorder_level: 25, expiry_date: '2026-08-25', batch_number: 'BCH-006', manufacturer: 'Swiss Pharma', is_active: true },
+  { id: '7', name: 'Artemether-Lumefantrine', generic_name: 'ACT', category: 'antibiotics', sku: 'ACT-20', unit_price: 15000, cost_price: 10000, currency: 'SSP' as Currency, quantity_in_stock: 35, reorder_level: 20, expiry_date: '2027-05-18', batch_number: 'BCH-007', manufacturer: 'Bliss GVS', is_active: true },
+  { id: '8', name: 'ORS Sachets', generic_name: 'Oral Rehydration Salts', category: 'other', sku: 'ORS-01', unit_price: 1500, cost_price: 800, currency: 'SSP' as Currency, quantity_in_stock: 300, reorder_level: 100, expiry_date: '2028-01-01', batch_number: 'BCH-008', manufacturer: 'UNICEF Supply', is_active: true },
 ];
 
 export default function InventoryPage() {
@@ -41,6 +48,7 @@ export default function InventoryPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(mockProducts[0]);
+  const [addCurrency, setAddCurrency] = useState('SSP');
 
   const filtered = mockProducts.filter((p) => {
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -113,7 +121,10 @@ export default function InventoryPage() {
                       <td className="p-3">
                         <Badge variant="info">{product.category}</Badge>
                       </td>
-                      <td className="p-3 text-right font-medium">{formatCurrency(product.unit_price)}</td>
+                      <td className="p-3 text-right">
+                        <span className="font-medium">{formatCurrency(product.unit_price, product.currency)}</span>
+                        <Badge variant={product.currency === 'USD' ? 'success' : 'default'} className="ml-1 text-[10px]">{product.currency}</Badge>
+                      </td>
                       <td className="p-3 text-right">
                         <Badge variant={isLow ? 'danger' : 'success'}>
                           {product.quantity_in_stock}
@@ -172,9 +183,17 @@ export default function InventoryPage() {
               <Input label="SKU" id="sku" placeholder="e.g. AMX-500" required />
               <Input label="Barcode" id="barcode" placeholder="Optional barcode" />
               <Select label="Category" id="category" options={categories.filter(c => c.value !== 'all')} />
-              <Input label="Manufacturer" id="manufacturer" placeholder="e.g. Emzor" required />
-              <Input label="Unit Price (₦)" id="price" type="number" required />
-              <Input label="Cost Price (₦)" id="cost" type="number" required />
+              <Input label="Manufacturer" id="manufacturer" placeholder="e.g. Juba Pharma" required />
+              <Select
+                label="Currency"
+                id="currency"
+                options={currencyOptions}
+                value={addCurrency}
+                onChange={(e) => setAddCurrency(e.target.value)}
+              />
+              <div />
+              <Input label={`Unit Price (${addCurrency})`} id="price" type="number" step="0.01" required />
+              <Input label={`Cost Price (${addCurrency})`} id="cost" type="number" step="0.01" required />
               <Input label="Quantity" id="quantity" type="number" required />
               <Input label="Reorder Level" id="reorder" type="number" required />
               <Input label="Expiry Date" id="expiry" type="date" required />
@@ -215,11 +234,11 @@ export default function InventoryPage() {
               </div>
               <div>
                 <p className="text-muted-foreground">Unit Price</p>
-                <p className="font-medium">{formatCurrency(selectedProduct.unit_price)}</p>
+                <p className="font-medium">{formatCurrency(selectedProduct.unit_price, selectedProduct.currency)}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Cost Price</p>
-                <p className="font-medium">{formatCurrency(selectedProduct.cost_price)}</p>
+                <p className="font-medium">{formatCurrency(selectedProduct.cost_price, selectedProduct.currency)}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Stock</p>

@@ -31,10 +31,10 @@ export default function SettingsPage() {
             <CardContent>
               <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
                 <Input label="Store Name" id="store_name" defaultValue="Global Pharmacy" />
-                <Input label="Address" id="address" defaultValue="123 Pharmacy Road, Lagos" />
-                <Input label="Phone" id="phone" defaultValue="08012345678" />
-                <Input label="Email" id="email" type="email" defaultValue="info@globalpharmacy.com" />
-                <Input label="License Number" id="license" defaultValue="PCN/GP/2024/001" />
+                <Input label="Address" id="address" defaultValue="Juba, South Sudan" />
+                <Input label="Phone" id="phone" defaultValue="+211920123456" />
+                <Input label="Email" id="email" type="email" defaultValue="info@globalpharmacy.ss" />
+                <Input label="License Number" id="license" defaultValue="SSPHA/GP/2024/001" />
                 <Button type="submit">Save Changes</Button>
               </form>
             </CardContent>

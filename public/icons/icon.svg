@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="80" fill="#1e40af"/>
+  <rect x="80" y="80" width="352" height="352" rx="40" fill="none" stroke="#f97316" stroke-width="8" opacity="0.3"/>
+  <text x="256" y="195" text-anchor="middle" font-family="Arial,sans-serif" font-weight="900" font-size="110" fill="white" letter-spacing="-2">GP</text>
+  <rect x="136" y="220" width="240" height="8" rx="4" fill="#f97316"/>
+  <text x="256" y="280" text-anchor="middle" font-family="Arial,sans-serif" font-weight="700" font-size="44" fill="white" letter-spacing="6">PHARMACY</text>
+  <rect x="186" y="310" width="140" height="110" rx="16" fill="#f97316"/>
+  <text x="256" y="385" text-anchor="middle" font-family="Arial,sans-serif" font-weight="900" font-size="60" fill="white">Rx</text>
+</svg>
