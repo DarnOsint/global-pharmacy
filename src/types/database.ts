@@ -136,3 +136,27 @@ export interface ExpenseCategory {
 
 export type PaymentMethod = 'cash' | 'card' | 'transfer' | 'credit';
 export type UserRole = 'admin' | 'pharmacist' | 'cashier' | 'store_manager';
+
+export interface Database {
+  public: {
+    Tables: {
+      suppliers: { Row: Supplier; Insert: Partial<Supplier>; Update: Partial<Supplier> };
+      products: { Row: Product; Insert: Partial<Product>; Update: Partial<Product> };
+      customers: { Row: Customer; Insert: Partial<Customer>; Update: Partial<Customer> };
+      sales: { Row: Sale; Insert: Partial<Sale>; Update: Partial<Sale> };
+      sale_items: { Row: SaleItem; Insert: Partial<SaleItem>; Update: Partial<SaleItem> };
+      purchases: { Row: Purchase; Insert: Partial<Purchase>; Update: Partial<Purchase> };
+      purchase_items: { Row: PurchaseItem; Insert: Partial<PurchaseItem>; Update: Partial<PurchaseItem> };
+      expenses: { Row: Expense; Insert: Partial<Expense>; Update: Partial<Expense> };
+      staff: { Row: Staff; Insert: Partial<Staff>; Update: Partial<Staff> };
+      payroll: { Row: Payroll; Insert: Partial<Payroll>; Update: Partial<Payroll> };
+    };
+    Enums: {
+      user_role: UserRole;
+      payment_method: PaymentMethod;
+      order_status: 'ordered' | 'received' | 'cancelled';
+      sale_status: 'completed' | 'returned' | 'cancelled';
+      payroll_status: 'pending' | 'paid';
+    };
+  };
+}
