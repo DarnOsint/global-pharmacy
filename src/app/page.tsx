@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { Pill, Delete, Loader2, AlertCircle } from 'lucide-react';
 import { useAuthStore, type AuthUser } from '@/lib/auth';
 import { seedAuthDb, verifyPinOffline } from '@/lib/auth-db';
 
 export default function PinLoginPage() {
+  const router = useRouter();
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -35,6 +37,7 @@ export default function PinLoginPage() {
               pin: staff.pin,
             };
             login(user);
+            router.push('/dashboard');
           } else {
             setError('Invalid PIN. Please try again.');
             setPin('');
