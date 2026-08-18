@@ -14,7 +14,7 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 import { useAuthStore } from '@/lib/auth';
 
 const mockStaff = [
-  { id: 'a0000000-0000-0000-0000-000000000001', first_name: 'Ajak', last_name: 'Deng', role: 'admin', phone: '+211920123456', email: 'ajak@globalpharmacy.ss', hire_date: '2024-01-15', salary: 450000, is_active: true },
+  { id: 'a0000000-0000-0000-0000-000000000001', first_name: 'Clara', last_name: 'Evelino Modi', role: 'admin', phone: '+211920123456', email: 'clara@globalpharmacy.ss', hire_date: '2024-01-15', salary: 450000, is_active: true },
   { id: 'a0000000-0000-0000-0000-000000000002', first_name: 'Nyamal', last_name: 'Kuol', role: 'pharmacist', phone: '+211921234567', email: 'nyamal@globalpharmacy.ss', hire_date: '2024-03-20', salary: 350000, is_active: true },
   { id: 'a0000000-0000-0000-0000-000000000003', first_name: 'Bol', last_name: 'Mawut', role: 'pharmacist', phone: '+211922345678', email: 'bol@globalpharmacy.ss', hire_date: '2024-06-10', salary: 350000, is_active: true },
   { id: 'a0000000-0000-0000-0000-000000000004', first_name: 'Akello', last_name: 'James', role: 'cashier', phone: '+211923456789', email: 'akello@globalpharmacy.ss', hire_date: '2025-01-05', salary: 200000, is_active: true },
@@ -22,7 +22,7 @@ const mockStaff = [
 ];
 
 const mockPayroll = [
-  { id: '1', staff_name: 'Ajak Deng', period_start: '2026-08-01', period_end: '2026-08-15', base_salary: 225000, allowances: 50000, deductions: 25000, net_pay: 250000, status: 'paid' },
+  { id: '1', staff_name: 'Clara Evelino Modi', period_start: '2026-08-01', period_end: '2026-08-15', base_salary: 225000, allowances: 50000, deductions: 25000, net_pay: 250000, status: 'paid' },
   { id: '2', staff_name: 'Nyamal Kuol', period_start: '2026-08-01', period_end: '2026-08-15', base_salary: 175000, allowances: 30000, deductions: 15000, net_pay: 190000, status: 'paid' },
   { id: '3', staff_name: 'Akello James', period_start: '2026-08-01', period_end: '2026-08-15', base_salary: 100000, allowances: 15000, deductions: 10000, net_pay: 105000, status: 'pending' },
 ];

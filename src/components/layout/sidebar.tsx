@@ -1,10 +1,11 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAppStore } from '@/lib/store';
 import { useAuthStore } from '@/lib/auth';
-import { cn } from '@/lib/utils';
+import { cn, daysUntilExpiry } from '@/lib/utils';
 import {
   LayoutDashboard, Package, ShoppingCart, Receipt,
   CreditCard, Users, BarChart3, AlertTriangle,
@@ -18,7 +19,7 @@ const navItems = [
   { href: '/purchases', label: 'Purchases', icon: Receipt },
   { href: '/expenses', label: 'Expenses', icon: CreditCard },
   { href: '/hr', label: 'HR & Payroll', icon: Users },
-  { href: '/alerts', label: 'Expiry Alerts', icon: AlertTriangle },
+  { href: '/alerts', label: 'Expiry Alerts', icon: AlertTriangle, hasAlert: true },
   { href: '/reports', label: 'Reports', icon: BarChart3 },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
@@ -30,11 +31,36 @@ const roleBadge: Record<string, string> = {
   store_manager: 'bg-blue-100 text-blue-700',
 };
 
+const mockProducts = [
+  { expiry_date: '2027-06-15', alert_days: 90 },
+  { expiry_date: '2027-12-20', alert_days: 30 },
+  { expiry_date: '2027-03-10', alert_days: 60 },
+  { expiry_date: '2027-09-25', alert_days: 90 },
+  { expiry_date: '2027-08-30', alert_days: 30 },
+  { expiry_date: '2026-08-25', alert_days: 14 },
+  { expiry_date: '2027-05-18', alert_days: 60 },
+  { expiry_date: '2028-01-01', alert_days: 90 },
+];
+
+function getExpiryAlertCount(): number {
+  return mockProducts.filter(p => {
+    const days = daysUntilExpiry(p.expiry_date);
+    return days <= p.alert_days;
+  }).length;
+}
+
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { sidebarOpen, toggleSidebar } = useAppStore();
   const { user, logout } = useAuthStore();
+  const [alertCount, setAlertCount] = useState(0);
+
+  useEffect(() => {
+    setAlertCount(getExpiryAlertCount());
+    const interval = setInterval(() => setAlertCount(getExpiryAlertCount()), 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -86,7 +112,12 @@ export function Sidebar() {
                 )}
               >
                 <item.icon className="w-5 h-5 shrink-0" />
-                {item.label}
+                <span className="flex-1">{item.label}</span>
+                {item.hasAlert && alertCount > 0 && (
+                  <span className="flex items-center justify-center min-w-[22px] h-[22px] rounded-full bg-danger text-white text-[10px] font-bold px-1.5">
+                    {alertCount}
+                  </span>
+                )}
               </Link>
             );
           })}

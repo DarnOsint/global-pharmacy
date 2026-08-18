@@ -157,24 +157,13 @@ export default function SettingsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-white text-xl font-bold">
-                  {user?.first_name?.[0]}{user?.last_name?.[0]}
-                </div>
-                <div>
-                  <p className="font-semibold text-lg">{user?.first_name} {user?.last_name}</p>
-                  <p className="text-sm text-muted-foreground capitalize">{user?.role?.replace('_', ' ')}</p>
-                  <p className="text-xs text-muted-foreground mt-1">PIN: {user?.pin}</p>
-                </div>
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-white text-xl font-bold">
+                {user?.first_name?.[0]}{user?.last_name?.[0]}
               </div>
-              <div className="space-y-2">
-                <p className="text-sm"><span className="text-muted-foreground">Access Level:</span> <span className="font-medium">Full Admin</span></p>
-                <p className="text-sm"><span className="text-muted-foreground">Can manage:</span> <span className="font-medium">Staff, Inventory, Sales, Reports, Settings</span></p>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm"><span className="text-muted-foreground">Status:</span> <span className="font-medium text-success">Active</span></p>
-                <p className="text-sm"><span className="text-muted-foreground">System:</span> <span className="font-medium">Global Pharmacy v1.0</span></p>
+              <div>
+                <p className="font-semibold text-lg">{user?.first_name} {user?.last_name}</p>
+                <p className="text-sm text-muted-foreground capitalize">{user?.role?.replace('_', ' ')}</p>
               </div>
             </div>
           </CardContent>

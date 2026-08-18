@@ -23,18 +23,9 @@ export type Currency = 'SSP' | 'USD';
 
 export function formatCurrency(amount: number, currency: Currency = 'SSP'): string {
   if (currency === 'USD') {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-    }).format(amount);
+    return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }
-  return new Intl.NumberFormat('en-SS', {
-    style: 'currency',
-    currency: 'SSP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
+  return `SSP ${amount.toLocaleString('en-SS', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
 
 export function formatDate(dateStr: string): string {
