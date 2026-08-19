@@ -23,7 +23,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { href: '/pos', label: 'POS', icon: ScanLine, roles: ['cashier', 'pharmacist', 'store_manager', 'admin'] },
+  { href: '/pos', label: 'POS', icon: ScanLine, roles: ['cashier'] },
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin'] },
   { href: '/inventory', label: 'Inventory', icon: Package, roles: ['pharmacist', 'store_manager', 'admin'] },
   { href: '/sales', label: 'Sales', icon: ShoppingCart, roles: ['admin'] },
