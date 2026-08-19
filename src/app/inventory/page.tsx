@@ -63,6 +63,8 @@ export default function InventoryPage() {
   const [editProduct, setEditProduct] = useState<Partial<Product>>(emptyProduct);
   const [addCurrency, setAddCurrency] = useState('SSP');
   const [editCurrency, setEditCurrency] = useState('SSP');
+  const [newCatInput, setNewCatInput] = useState('');
+  const [showNewCat, setShowNewCat] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
@@ -320,7 +322,21 @@ export default function InventoryPage() {
               <Input label="Generic Name" id="generic" placeholder="e.g. Amoxicillin" required />
               <Input label="SKU" id="sku" placeholder="e.g. AMX-500" required />
               <Input label="Barcode" id="barcode" placeholder="Optional barcode" />
-              <Select label="Category" id="category" options={categories.filter(c => c.value !== 'all')} />
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">Category</label>
+                <div className="flex gap-2">
+                  <select id="category" className="flex-1 h-10 rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                    {categories.filter(c => c.value !== 'all').map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                  </select>
+                  <button type="button" onClick={() => setShowNewCat(!showNewCat)} className="px-3 h-10 rounded-lg border border-border bg-white text-sm font-medium hover:bg-gray-50 whitespace-nowrap">+ New</button>
+                </div>
+                {showNewCat && (
+                  <div className="flex gap-2 mt-2">
+                    <input type="text" value={newCatInput} onChange={e => setNewCatInput(e.target.value)} placeholder="Category name..." className="flex-1 h-9 rounded-lg border border-border bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary" onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (newCatInput.trim()) { settings.addCategory(newCatInput.trim()); setNewCatInput(''); setShowNewCat(false); } } }} />
+                    <button type="button" onClick={() => { if (newCatInput.trim()) { settings.addCategory(newCatInput.trim()); setNewCatInput(''); setShowNewCat(false); } }} className="px-3 h-9 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90">Add</button>
+                  </div>
+                )}
+              </div>
               <Input label="Manufacturer" id="manufacturer" placeholder="e.g. Juba Pharma" required />
               <Select label="Currency" id="currency" options={currencyOptions} value={addCurrency} onChange={(e) => setAddCurrency(e.target.value)} />
               <div />
@@ -351,7 +367,21 @@ export default function InventoryPage() {
               <Input label="Generic Name" id="egeneric" value={editProduct.generic_name || ''} onChange={e => setEditProduct({ ...editProduct, generic_name: e.target.value })} required />
               <Input label="SKU" id="esk" value={editProduct.sku || ''} onChange={e => setEditProduct({ ...editProduct, sku: e.target.value })} required />
               <Input label="Manufacturer" id="emanufacturer" value={editProduct.manufacturer || ''} onChange={e => setEditProduct({ ...editProduct, manufacturer: e.target.value })} required />
-              <Select label="Category" id="ecategory" options={categories.filter(c => c.value !== 'all')} value={editProduct.category || ''} onChange={e => setEditProduct({ ...editProduct, category: e.target.value })} />
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">Category</label>
+                <div className="flex gap-2">
+                  <select value={editProduct.category || ''} onChange={e => setEditProduct({ ...editProduct, category: e.target.value })} className="flex-1 h-10 rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                    {categories.filter(c => c.value !== 'all').map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                  </select>
+                  <button type="button" onClick={() => setShowNewCat(!showNewCat)} className="px-3 h-10 rounded-lg border border-border bg-white text-sm font-medium hover:bg-gray-50 whitespace-nowrap">+ New</button>
+                </div>
+                {showNewCat && (
+                  <div className="flex gap-2 mt-2">
+                    <input type="text" value={newCatInput} onChange={e => setNewCatInput(e.target.value)} placeholder="Category name..." className="flex-1 h-9 rounded-lg border border-border bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary" onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (newCatInput.trim()) { settings.addCategory(newCatInput.trim()); setNewCatInput(''); setShowNewCat(false); } } }} />
+                    <button type="button" onClick={() => { if (newCatInput.trim()) { settings.addCategory(newCatInput.trim()); setNewCatInput(''); setShowNewCat(false); } }} className="px-3 h-9 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90">Add</button>
+                  </div>
+                )}
+              </div>
               <Select label="Currency" id="ecurrency" options={currencyOptions} value={editCurrency} onChange={e => { setEditCurrency(e.target.value as Currency); setEditProduct({ ...editProduct, currency: e.target.value as Currency }); }} />
               <Input label={`Unit Price (${editCurrency})`} id="eprice" type="number" step="0.01" value={editProduct.unit_price || 0} onChange={e => setEditProduct({ ...editProduct, unit_price: Number(e.target.value) })} required />
               <Input label={`Cost Price (${editCurrency})`} id="ecost" type="number" step="0.01" value={editProduct.cost_price || 0} onChange={e => setEditProduct({ ...editProduct, cost_price: Number(e.target.value) })} required />
