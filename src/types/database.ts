@@ -54,6 +54,7 @@ export interface Sale {
   discount: number;
   tax: number;
   total: number;
+  currency: 'SSP' | 'USD';
   payment_method: 'cash' | 'card' | 'transfer' | 'credit';
   status: 'completed' | 'returned' | 'cancelled';
   notes: string | null;
@@ -78,6 +79,7 @@ export interface Purchase {
   subtotal: number;
   tax: number;
   total: number;
+  currency: 'SSP' | 'USD';
   status: 'ordered' | 'received' | 'cancelled';
   notes: string | null;
   created_at: string;
@@ -97,6 +99,7 @@ export interface Expense {
   category: string;
   description: string;
   amount: number;
+  currency: 'SSP' | 'USD';
   date: string;
   user_id: string;
   receipt_url: string | null;

@@ -1,9 +1,17 @@
-const CACHE_NAME = 'global-pharmacy-v1';
+const CACHE_NAME = 'global-pharmacy-v2';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
+  '/icons/icon.svg',
+  '/dashboard',
+  '/inventory',
+  '/sales',
+  '/purchases',
+  '/expenses',
+  '/hr',
+  '/alerts',
+  '/reports',
+  '/settings',
 ];
 
 self.addEventListener('install', (event) => {
@@ -24,6 +32,7 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  if (event.request.url.includes('supabase')) return;
 
   event.respondWith(
     caches.match(event.request).then((cached) => {
@@ -40,4 +49,14 @@ self.addEventListener('fetch', (event) => {
       return cached || fetchPromise;
     })
   );
+});
+
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'sync-pending') {
+    event.waitUntil(
+      self.clients.matchAll().then((clients) => {
+        clients.forEach((client) => client.postMessage({ type: 'SYNC_REQUEST' }));
+      })
+    );
+  }
 });

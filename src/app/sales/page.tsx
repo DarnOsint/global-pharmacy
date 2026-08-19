@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AuthGuard } from '@/components/auth-guard';
 import { AppShell } from '@/components/layout/app-shell';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,50 +12,92 @@ import { ShoppingCart, Plus, Search, Edit2, Eye, Trash2 } from 'lucide-react';
 import { formatCurrency, formatDate, formatCurrencyPair, type Currency } from '@/lib/utils';
 import { useAuthStore } from '@/lib/auth';
 import { useSettingsStore } from '@/lib/settings-store';
+import { useSync } from '@/lib/use-sync';
+import { getAllSales, addSale, updateSale, deleteSale } from '@/lib/offline-db';
+import { seedOfflineData } from '@/lib/seed-data';
+import type { Sale } from '@/types/database';
 
 const paymentMethods = [
   { value: 'cash', label: 'Cash' }, { value: 'card', label: 'Card' },
   { value: 'transfer', label: 'Transfer' }, { value: 'credit', label: 'Credit' },
 ];
 
-const initialSales = [
-  { id: '1', invoice: 'GS-260801-0001', customer: 'Amina Deng', items: 5, subtotal: 35000, discount: 2000, tax: 0, total: 33000, payment_method: 'cash', status: 'completed', currency: 'SSP' as Currency, date: '2026-08-18' },
-  { id: '2', invoice: 'GS-260801-0002', customer: 'Peter Garang', items: 3, subtotal: 11.00, discount: 0, tax: 0, total: 11.00, payment_method: 'cash', status: 'completed', currency: 'USD' as Currency, date: '2026-08-18' },
-  { id: '3', invoice: 'GS-260801-0003', customer: 'Sarah Nyabol', items: 8, subtotal: 22500, discount: 1000, tax: 0, total: 21500, payment_method: 'transfer', status: 'completed', currency: 'SSP' as Currency, date: '2026-08-17' },
-  { id: '4', invoice: 'GS-260801-0004', customer: 'James Bol', items: 2, subtotal: 16000, discount: 0, tax: 0, total: 16000, payment_method: 'card', status: 'completed', currency: 'SSP' as Currency, date: '2026-08-17' },
-  { id: '5', invoice: 'GS-260801-0005', customer: 'Grace Akello', items: 4, subtotal: 28.50, discount: 3.50, tax: 0, total: 25.00, payment_method: 'cash', status: 'returned', currency: 'USD' as Currency, date: '2026-08-16' },
-  { id: '6', invoice: 'GS-260801-0006', customer: 'David Malual', items: 1, subtotal: 8500, discount: 0, tax: 0, total: 8500, payment_method: 'credit', status: 'completed', currency: 'SSP' as Currency, date: '2026-08-16' },
+const currencies = [
+  { value: 'SSP', label: 'SSP' }, { value: 'USD', label: 'USD' },
 ];
 
-type Sale = typeof initialSales[number];
-
-const emptySale: Sale = {
-  id: '', invoice: '', customer: '', items: 0, subtotal: 0, discount: 0, tax: 0, total: 0,
-  payment_method: 'cash', status: 'completed', currency: 'SSP', date: new Date().toISOString().slice(0, 10),
-};
+const statuses = [
+  { value: 'completed', label: 'Completed' }, { value: 'returned', label: 'Returned' },
+  { value: 'cancelled', label: 'Cancelled' },
+];
 
 export default function SalesPage() {
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'admin';
   const settings = useSettingsStore();
+  const { refreshCount } = useSync();
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
-  const [selected, setSelected] = useState<Sale>(initialSales[0]);
-  const [editSale, setEditSale] = useState<Sale>(emptySale);
-  const [sales, setSales] = useState<Sale[]>(initialSales);
+  const [selected, setSelected] = useState<Sale | null>(null);
+  const [editSale, setEditSale] = useState<Partial<Sale>>({});
+  const [sales, setSales] = useState<Sale[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadSales = useCallback(async () => {
+    await seedOfflineData();
+    const data = await getAllSales();
+    setSales(data);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { loadSales(); }, [loadSales]);
 
   const filtered = sales.filter(s =>
-    s.invoice.toLowerCase().includes(search.toLowerCase()) ||
-    s.customer.toLowerCase().includes(search.toLowerCase())
+    s.invoice_number.toLowerCase().includes(search.toLowerCase()) ||
+    s.notes?.toLowerCase().includes(search.toLowerCase())
   );
 
   const openEdit = (sale: Sale) => { setEditSale({ ...sale }); setShowEdit(true); };
-  const saveEdit = (e: React.FormEvent) => {
+
+  const saveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSales(prev => prev.map(s => s.id === editSale.id ? editSale : s));
+    if (!editSale.id) return;
+    await updateSale(editSale.id, editSale);
+    await refreshCount();
     setShowEdit(false);
+    await loadSales();
+  };
+
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const form = e.target as HTMLFormElement;
+    const data = {
+      invoice_number: `GS-${Date.now().toString().slice(-8)}`,
+      customer_id: null,
+      user_id: user?.id || '',
+      subtotal: Number((form.querySelector('#subtotal') as HTMLInputElement).value),
+      discount: Number((form.querySelector('#discount') as HTMLInputElement)?.value || 0),
+      tax: 0,
+      total: 0,
+      payment_method: (form.querySelector('#payment') as HTMLSelectElement).value as Sale['payment_method'],
+      status: 'completed' as const,
+      currency: (form.querySelector('#currency') as HTMLSelectElement).value as Currency,
+      notes: (form.querySelector('#customer') as HTMLInputElement).value,
+    };
+    data.total = data.subtotal - data.discount;
+    await addSale(data, []);
+    await refreshCount();
+    setShowAdd(false);
+    await loadSales();
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Delete this sale?')) return;
+    await deleteSale(id);
+    await refreshCount();
+    await loadSales();
   };
 
   return (
@@ -84,7 +126,6 @@ export default function SalesPage() {
                 <tr className="border-b border-border bg-muted/50">
                   <th className="text-left p-3 font-medium">Invoice</th>
                   <th className="text-left p-3 font-medium">Customer</th>
-                  <th className="text-right p-3 font-medium">Items</th>
                   <th className="text-right p-3 font-medium">Total</th>
                   <th className="text-left p-3 font-medium">Payment</th>
                   <th className="text-left p-3 font-medium">Status</th>
@@ -95,24 +136,23 @@ export default function SalesPage() {
               <tbody>
                 {filtered.map((sale) => (
                   <tr key={sale.id} className="border-b border-border hover:bg-muted/30">
-                    <td className="p-3 font-mono text-xs font-medium">{sale.invoice}</td>
-                    <td className="p-3 font-medium">{sale.customer}</td>
-                    <td className="p-3 text-right">{sale.items}</td>
-                    <td className="p-3 text-right font-semibold">{formatCurrencyPair(sale.total, sale.currency, settings.exchangeRate)}</td>
+                    <td className="p-3 font-mono text-xs font-medium">{sale.invoice_number}</td>
+                    <td className="p-3 font-medium">{sale.notes || 'Walk-in'}</td>
+                    <td className="p-3 text-right font-semibold">{formatCurrencyPair(sale.total, (sale as any).currency || 'SSP', settings.exchangeRate)}</td>
                     <td className="p-3"><Badge variant="default">{sale.payment_method}</Badge></td>
                     <td className="p-3"><Badge variant={sale.status === 'completed' ? 'success' : sale.status === 'returned' ? 'danger' : 'warning'}>{sale.status}</Badge></td>
-                    <td className="p-3 text-muted-foreground">{formatDate(sale.date)}</td>
+                    <td className="p-3 text-muted-foreground">{formatDate(sale.created_at)}</td>
                     <td className="p-3 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <button onClick={() => { setSelected(sale); setShowDetail(true); }} className="p-1.5 rounded hover:bg-muted"><Eye className="w-4 h-4" /></button>
                         {isAdmin && <button onClick={() => openEdit(sale)} className="p-1.5 rounded hover:bg-muted"><Edit2 className="w-4 h-4" /></button>}
-                        {isAdmin && <button className="p-1.5 rounded hover:bg-red-50 text-danger"><Trash2 className="w-4 h-4" /></button>}
+                        {isAdmin && <button onClick={() => handleDelete(sale.id)} className="p-1.5 rounded hover:bg-red-50 text-danger"><Trash2 className="w-4 h-4" /></button>}
                       </div>
                     </td>
                   </tr>
                 ))}
-                {filtered.length === 0 && (
-                  <tr><td colSpan={8}><EmptyState icon={<ShoppingCart className="w-8 h-8 text-muted-foreground" />} title="No sales found" description="No sales match your search" /></td></tr>
+                {filtered.length === 0 && !loading && (
+                  <tr><td colSpan={7}><EmptyState icon={<ShoppingCart className="w-8 h-8 text-muted-foreground" />} title="No sales found" description="Record your first sale" /></td></tr>
                 )}
               </tbody>
             </table>
@@ -121,53 +161,49 @@ export default function SalesPage() {
 
         {/* Add Modal */}
         <Modal open={showAdd} onClose={() => setShowAdd(false)} title="New Sale" size="md">
-          <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); setShowAdd(false); }}>
+          <form className="space-y-4" onSubmit={handleAdd}>
             <div className="grid grid-cols-2 gap-4">
-              <div><label className="block text-sm font-medium text-foreground mb-1">Customer Name</label><input type="text" required className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" /></div>
-              <div><label className="block text-sm font-medium text-foreground mb-1">Currency</label><select className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"><option value="SSP">SSP</option><option value="USD">USD</option></select></div>
-              <div><label className="block text-sm font-medium text-foreground mb-1">Subtotal</label><input type="number" step="0.01" required className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" /></div>
-              <div><label className="block text-sm font-medium text-foreground mb-1">Discount</label><input type="number" step="0.01" defaultValue={0} className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" /></div>
-              <div><label className="block text-sm font-medium text-foreground mb-1">Payment Method</label><select className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">{paymentMethods.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}</select></div>
-              <div><label className="block text-sm font-medium text-foreground mb-1">Date</label><input type="date" required className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" /></div>
+              <div><label className="block text-sm font-medium text-foreground mb-1">Customer Name</label><input type="text" id="customer" required className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" /></div>
+              <div><label className="block text-sm font-medium text-foreground mb-1">Currency</label><select id="currency" className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">{currencies.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}</select></div>
+              <div><label className="block text-sm font-medium text-foreground mb-1">Subtotal</label><input type="number" id="subtotal" step="0.01" required className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" /></div>
+              <div><label className="block text-sm font-medium text-foreground mb-1">Discount</label><input type="number" id="discount" step="0.01" defaultValue={0} className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" /></div>
+              <div><label className="block text-sm font-medium text-foreground mb-1">Payment Method</label><select id="payment" className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">{paymentMethods.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}</select></div>
             </div>
             <div className="flex justify-end gap-3"><Button variant="ghost" type="button" onClick={() => setShowAdd(false)}>Cancel</Button><Button type="submit">Save Sale</Button></div>
           </form>
         </Modal>
 
         {/* Edit Modal */}
-        <Modal open={showEdit} onClose={() => setShowEdit(false)} title={`Edit Sale - ${editSale.invoice}`} size="md">
+        <Modal open={showEdit} onClose={() => setShowEdit(false)} title={`Edit Sale — ${editSale.invoice_number}`} size="md">
           <form className="space-y-4" onSubmit={saveEdit}>
             <div className="grid grid-cols-2 gap-4">
-              <div><label className="block text-sm font-medium text-foreground mb-1">Customer Name</label><input type="text" value={editSale.customer} onChange={e => setEditSale({ ...editSale, customer: e.target.value })} required className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" /></div>
-              <div><label className="block text-sm font-medium text-foreground mb-1">Currency</label><select value={editSale.currency} onChange={e => setEditSale({ ...editSale, currency: e.target.value as Currency })} className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"><option value="SSP">SSP</option><option value="USD">USD</option></select></div>
-              <div><label className="block text-sm font-medium text-foreground mb-1">Subtotal</label><input type="number" step="0.01" value={editSale.subtotal} onChange={e => setEditSale({ ...editSale, subtotal: Number(e.target.value), total: Number(e.target.value) - editSale.discount })} required className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" /></div>
-              <div><label className="block text-sm font-medium text-foreground mb-1">Discount</label><input type="number" step="0.01" value={editSale.discount} onChange={e => setEditSale({ ...editSale, discount: Number(e.target.value), total: editSale.subtotal - Number(e.target.value) })} className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" /></div>
-              <div><label className="block text-sm font-medium text-foreground mb-1">Total</label><input type="number" step="0.01" value={editSale.total} readOnly className="flex h-10 w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm" /></div>
-              <div><label className="block text-sm font-medium text-foreground mb-1">Payment Method</label><select value={editSale.payment_method} onChange={e => setEditSale({ ...editSale, payment_method: e.target.value as Sale['payment_method'] })} className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">{paymentMethods.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}</select></div>
-              <div><label className="block text-sm font-medium text-foreground mb-1">Status</label><select value={editSale.status} onChange={e => setEditSale({ ...editSale, status: e.target.value as Sale['status'] })} className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"><option value="completed">Completed</option><option value="returned">Returned</option><option value="cancelled">Cancelled</option></select></div>
-              <div><label className="block text-sm font-medium text-foreground mb-1">Date</label><input type="date" value={editSale.date} onChange={e => setEditSale({ ...editSale, date: e.target.value })} required className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" /></div>
+              <div><label className="block text-sm font-medium text-foreground mb-1">Customer</label><input type="text" value={(editSale as any).notes || ''} onChange={e => setEditSale({ ...editSale, notes: e.target.value })} className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" /></div>
+              <div><label className="block text-sm font-medium text-foreground mb-1">Payment</label><select value={editSale.payment_method || 'cash'} onChange={e => setEditSale({ ...editSale, payment_method: e.target.value as Sale['payment_method'] })} className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">{paymentMethods.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}</select></div>
+              <div><label className="block text-sm font-medium text-foreground mb-1">Subtotal</label><input type="number" step="0.01" value={editSale.subtotal || 0} onChange={e => setEditSale({ ...editSale, subtotal: Number(e.target.value), total: Number(e.target.value) - (editSale.discount || 0) })} className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" /></div>
+              <div><label className="block text-sm font-medium text-foreground mb-1">Discount</label><input type="number" step="0.01" value={editSale.discount || 0} onChange={e => setEditSale({ ...editSale, discount: Number(e.target.value), total: (editSale.subtotal || 0) - Number(e.target.value) })} className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" /></div>
+              <div><label className="block text-sm font-medium text-foreground mb-1">Status</label><select value={editSale.status || 'completed'} onChange={e => setEditSale({ ...editSale, status: e.target.value as Sale['status'] })} className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">{statuses.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}</select></div>
             </div>
             <div className="flex justify-end gap-3"><Button variant="ghost" type="button" onClick={() => setShowEdit(false)}>Cancel</Button><Button type="submit">Save Changes</Button></div>
           </form>
         </Modal>
 
         {/* Detail Modal */}
-        <Modal open={showDetail} onClose={() => setShowDetail(false)} title={`Sale — ${selected.invoice}`} size="md">
-          <div className="space-y-4 text-sm">
-            <div className="grid grid-cols-2 gap-4">
-              <div><p className="text-muted-foreground">Customer</p><p className="font-medium">{selected.customer}</p></div>
-              <div><p className="text-muted-foreground">Date</p><p className="font-medium">{formatDate(selected.date)}</p></div>
-              <div><p className="text-muted-foreground">Subtotal</p><p className="font-medium">{formatCurrencyPair(selected.subtotal, selected.currency, settings.exchangeRate)}</p></div>
-              <div><p className="text-muted-foreground">Discount</p><p className="font-medium text-danger">-{formatCurrencyPair(selected.discount, selected.currency, settings.exchangeRate)}</p></div>
-              <div><p className="text-muted-foreground">Total</p><p className="font-bold text-primary">{formatCurrencyPair(selected.total, selected.currency, settings.exchangeRate)}</p></div>
-              <div><p className="text-muted-foreground">Payment</p><Badge variant="default">{selected.payment_method}</Badge></div>
-              <div><p className="text-muted-foreground">Status</p><Badge variant={selected.status === 'completed' ? 'success' : 'danger'}>{selected.status}</Badge></div>
+        <Modal open={showDetail} onClose={() => setShowDetail(false)} title={`Sale — ${selected?.invoice_number}`} size="md">
+          {selected && (
+            <div className="space-y-4 text-sm">
+              <div className="grid grid-cols-2 gap-4">
+                <div><p className="text-muted-foreground">Customer</p><p className="font-medium">{(selected as any).notes || 'Walk-in'}</p></div>
+                <div><p className="text-muted-foreground">Date</p><p className="font-medium">{formatDate(selected.created_at)}</p></div>
+                <div><p className="text-muted-foreground">Total</p><p className="font-bold text-primary">{formatCurrency(selected.total, (selected as any).currency || 'SSP')}</p></div>
+                <div><p className="text-muted-foreground">Payment</p><Badge variant="default">{selected.payment_method}</Badge></div>
+                <div><p className="text-muted-foreground">Status</p><Badge variant={selected.status === 'completed' ? 'success' : 'danger'}>{selected.status}</Badge></div>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <Button variant="ghost" onClick={() => setShowDetail(false)}>Close</Button>
+                {isAdmin && <Button onClick={() => { setShowDetail(false); openEdit(selected); }}>Edit Sale</Button>}
+              </div>
             </div>
-            <div className="flex justify-end gap-3 pt-2">
-              <Button variant="ghost" onClick={() => setShowDetail(false)}>Close</Button>
-              {isAdmin && <Button onClick={() => { setShowDetail(false); openEdit(selected); }}>Edit Sale</Button>}
-            </div>
-          </div>
+          )}
         </Modal>
       </div>
     </AppShell>

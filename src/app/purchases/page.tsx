@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AuthGuard } from '@/components/auth-guard';
 import { AppShell } from '@/components/layout/app-shell';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,45 +12,84 @@ import { Receipt, Plus, Search, Edit2, Eye, Trash2 } from 'lucide-react';
 import { formatCurrency, formatDate, formatCurrencyPair, type Currency } from '@/lib/utils';
 import { useAuthStore } from '@/lib/auth';
 import { useSettingsStore } from '@/lib/settings-store';
+import { useSync } from '@/lib/use-sync';
+import { getAllPurchases, addPurchase, updatePurchase, deletePurchase, getAllSuppliers } from '@/lib/offline-db';
+import { seedOfflineData } from '@/lib/seed-data';
+import type { Purchase, Supplier } from '@/types/database';
 
-const initialPurchases = [
-  { id: '1', invoice: 'GP-260801-0001', supplier: 'Juba Pharma Ltd', items: 12, subtotal: 450000, tax: 0, total: 450000, status: 'received', currency: 'SSP' as Currency, date: '2026-08-01' },
-  { id: '2', invoice: 'GP-260801-0002', supplier: 'Medipharm Distributors', items: 8, subtotal: 125.00, tax: 0, total: 125.00, status: 'received', currency: 'USD' as Currency, date: '2026-08-05' },
-  { id: '3', invoice: 'GP-260801-0003', supplier: 'Bliss GVS Juba', items: 6, subtotal: 280000, tax: 0, total: 280000, status: 'ordered', currency: 'SSP' as Currency, date: '2026-08-10' },
-  { id: '4', invoice: 'GP-260801-0004', supplier: 'VitaHealth South Sudan', items: 15, subtotal: 850000, tax: 0, total: 850000, status: 'received', currency: 'SSP' as Currency, date: '2026-08-12' },
-  { id: '5', invoice: 'GP-260801-0005', supplier: 'Swiss Pharma Juba', items: 4, subtotal: 55.00, tax: 0, total: 55.00, status: 'cancelled', currency: 'USD' as Currency, date: '2026-08-14' },
-];
-
-type Purchase = typeof initialPurchases[number];
-
-const emptyPurchase: Purchase = {
-  id: '', invoice: '', supplier: '', items: 0, subtotal: 0, tax: 0, total: 0,
-  status: 'ordered', currency: 'SSP', date: new Date().toISOString().slice(0, 10),
-};
+const currencies = [{ value: 'SSP', label: 'SSP' }, { value: 'USD', label: 'USD' }];
+const statuses = [{ value: 'ordered', label: 'Ordered' }, { value: 'received', label: 'Received' }, { value: 'cancelled', label: 'Cancelled' }];
 
 export default function PurchasesPage() {
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'admin';
   const settings = useSettingsStore();
+  const { refreshCount } = useSync();
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
-  const [selected, setSelected] = useState<Purchase>(initialPurchases[0]);
-  const [editPurchase, setEditPurchase] = useState<Purchase>(emptyPurchase);
-  const [purchases, setPurchases] = useState<Purchase[]>(initialPurchases);
+  const [selected, setSelected] = useState<Purchase | null>(null);
+  const [editPurchase, setEditPurchase] = useState<Partial<Purchase>>({});
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadData = useCallback(async () => {
+    await seedOfflineData();
+    const [p, s] = await Promise.all([getAllPurchases(), getAllSuppliers()]);
+    setPurchases(p);
+    setSuppliers(s);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { loadData(); }, [loadData]);
 
   const filtered = purchases.filter(p =>
-    p.invoice.toLowerCase().includes(search.toLowerCase()) ||
-    p.supplier.toLowerCase().includes(search.toLowerCase())
+    p.invoice_number.toLowerCase().includes(search.toLowerCase())
   );
 
   const openEdit = (purchase: Purchase) => { setEditPurchase({ ...purchase }); setShowEdit(true); };
-  const saveEdit = (e: React.FormEvent) => {
+
+  const saveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setPurchases(prev => prev.map(p => p.id === editPurchase.id ? editPurchase : p));
+    if (!editPurchase.id) return;
+    await updatePurchase(editPurchase.id, editPurchase);
+    await refreshCount();
     setShowEdit(false);
+    await loadData();
   };
+
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const form = e.target as HTMLFormElement;
+    const supplierId = (form.querySelector('#supplier') as HTMLSelectElement).value;
+    const subtotal = Number((form.querySelector('#subtotal') as HTMLInputElement).value);
+    const data = {
+      invoice_number: `GP-${Date.now().toString().slice(-8)}`,
+      supplier_id: supplierId,
+      user_id: user?.id || '',
+      subtotal,
+      tax: 0,
+      total: subtotal,
+      status: 'ordered' as const,
+      currency: (form.querySelector('#currency') as HTMLSelectElement).value as Currency,
+      notes: null,
+    };
+    await addPurchase(data, []);
+    await refreshCount();
+    setShowAdd(false);
+    await loadData();
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Delete this purchase?')) return;
+    await deletePurchase(id);
+    await refreshCount();
+    await loadData();
+  };
+
+  const getSupplierName = (id: string) => suppliers.find(s => s.id === id)?.name || id;
 
   return (
     <AuthGuard>
@@ -69,7 +108,7 @@ export default function PurchasesPage() {
             <CardTitle>Purchase Orders</CardTitle>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input type="text" placeholder="Search invoice or supplier..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10 pr-4 py-2 rounded-lg border border-border text-sm w-64 focus:outline-none focus:ring-2 focus:ring-primary" />
+              <input type="text" placeholder="Search invoice..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10 pr-4 py-2 rounded-lg border border-border text-sm w-64 focus:outline-none focus:ring-2 focus:ring-primary" />
             </div>
           </CardHeader>
           <div className="overflow-x-auto">
@@ -78,7 +117,6 @@ export default function PurchasesPage() {
                 <tr className="border-b border-border bg-muted/50">
                   <th className="text-left p-3 font-medium">Invoice</th>
                   <th className="text-left p-3 font-medium">Supplier</th>
-                  <th className="text-right p-3 font-medium">Items</th>
                   <th className="text-right p-3 font-medium">Total</th>
                   <th className="text-left p-3 font-medium">Status</th>
                   <th className="text-left p-3 font-medium">Date</th>
@@ -88,23 +126,22 @@ export default function PurchasesPage() {
               <tbody>
                 {filtered.map((purchase) => (
                   <tr key={purchase.id} className="border-b border-border hover:bg-muted/30">
-                    <td className="p-3 font-mono text-xs font-medium">{purchase.invoice}</td>
-                    <td className="p-3 font-medium">{purchase.supplier}</td>
-                    <td className="p-3 text-right">{purchase.items}</td>
-                    <td className="p-3 text-right font-semibold">{formatCurrencyPair(purchase.total, purchase.currency, settings.exchangeRate)}</td>
+                    <td className="p-3 font-mono text-xs font-medium">{purchase.invoice_number}</td>
+                    <td className="p-3 font-medium">{getSupplierName(purchase.supplier_id)}</td>
+                    <td className="p-3 text-right font-semibold">{formatCurrencyPair(purchase.total, (purchase as any).currency || 'SSP', settings.exchangeRate)}</td>
                     <td className="p-3"><Badge variant={purchase.status === 'received' ? 'success' : purchase.status === 'ordered' ? 'warning' : 'danger'}>{purchase.status}</Badge></td>
-                    <td className="p-3 text-muted-foreground">{formatDate(purchase.date)}</td>
+                    <td className="p-3 text-muted-foreground">{formatDate(purchase.created_at)}</td>
                     <td className="p-3 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <button onClick={() => { setSelected(purchase); setShowDetail(true); }} className="p-1.5 rounded hover:bg-muted"><Eye className="w-4 h-4" /></button>
                         {isAdmin && <button onClick={() => openEdit(purchase)} className="p-1.5 rounded hover:bg-muted"><Edit2 className="w-4 h-4" /></button>}
-                        {isAdmin && <button className="p-1.5 rounded hover:bg-red-50 text-danger"><Trash2 className="w-4 h-4" /></button>}
+                        {isAdmin && <button onClick={() => handleDelete(purchase.id)} className="p-1.5 rounded hover:bg-red-50 text-danger"><Trash2 className="w-4 h-4" /></button>}
                       </div>
                     </td>
                   </tr>
                 ))}
-                {filtered.length === 0 && (
-                  <tr><td colSpan={7}><EmptyState icon={<Receipt className="w-8 h-8 text-muted-foreground" />} title="No purchases found" description="No purchases match your search" /></td></tr>
+                {filtered.length === 0 && !loading && (
+                  <tr><td colSpan={6}><EmptyState icon={<Receipt className="w-8 h-8 text-muted-foreground" />} title="No purchases found" description="Create your first purchase order" /></td></tr>
                 )}
               </tbody>
             </table>
@@ -113,46 +150,43 @@ export default function PurchasesPage() {
 
         {/* Add Modal */}
         <Modal open={showAdd} onClose={() => setShowAdd(false)} title="New Purchase Order" size="md">
-          <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); setShowAdd(false); }}>
+          <form className="space-y-4" onSubmit={handleAdd}>
             <div className="grid grid-cols-2 gap-4">
-              <div><label className="block text-sm font-medium text-foreground mb-1">Supplier</label><input type="text" required className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" /></div>
-              <div><label className="block text-sm font-medium text-foreground mb-1">Currency</label><select className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"><option value="SSP">SSP</option><option value="USD">USD</option></select></div>
-              <div><label className="block text-sm font-medium text-foreground mb-1">Subtotal</label><input type="number" step="0.01" required className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" /></div>
-              <div><label className="block text-sm font-medium text-foreground mb-1">Date</label><input type="date" required className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" /></div>
+              <div><label className="block text-sm font-medium text-foreground mb-1">Supplier</label><select id="supplier" required className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">{suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
+              <div><label className="block text-sm font-medium text-foreground mb-1">Currency</label><select id="currency" className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">{currencies.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}</select></div>
+              <div className="col-span-2"><label className="block text-sm font-medium text-foreground mb-1">Subtotal</label><input type="number" id="subtotal" step="0.01" required className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" /></div>
             </div>
             <div className="flex justify-end gap-3"><Button variant="ghost" type="button" onClick={() => setShowAdd(false)}>Cancel</Button><Button type="submit">Save Purchase</Button></div>
           </form>
         </Modal>
 
         {/* Edit Modal */}
-        <Modal open={showEdit} onClose={() => setShowEdit(false)} title={`Edit Purchase — ${editPurchase.invoice}`} size="md">
+        <Modal open={showEdit} onClose={() => setShowEdit(false)} title={`Edit — ${editPurchase.invoice_number}`} size="md">
           <form className="space-y-4" onSubmit={saveEdit}>
             <div className="grid grid-cols-2 gap-4">
-              <div><label className="block text-sm font-medium text-foreground mb-1">Supplier</label><input type="text" value={editPurchase.supplier} onChange={e => setEditPurchase({ ...editPurchase, supplier: e.target.value })} required className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" /></div>
-              <div><label className="block text-sm font-medium text-foreground mb-1">Currency</label><select value={editPurchase.currency} onChange={e => setEditPurchase({ ...editPurchase, currency: e.target.value as Currency })} className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"><option value="SSP">SSP</option><option value="USD">USD</option></select></div>
-              <div><label className="block text-sm font-medium text-foreground mb-1">Subtotal</label><input type="number" step="0.01" value={editPurchase.subtotal} onChange={e => setEditPurchase({ ...editPurchase, subtotal: Number(e.target.value), total: Number(e.target.value) })} required className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" /></div>
-              <div><label className="block text-sm font-medium text-foreground mb-1">Total</label><input type="number" step="0.01" value={editPurchase.total} readOnly className="flex h-10 w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm" /></div>
-              <div><label className="block text-sm font-medium text-foreground mb-1">Status</label><select value={editPurchase.status} onChange={e => setEditPurchase({ ...editPurchase, status: e.target.value as Purchase['status'] })} className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"><option value="ordered">Ordered</option><option value="received">Received</option><option value="cancelled">Cancelled</option></select></div>
-              <div><label className="block text-sm font-medium text-foreground mb-1">Date</label><input type="date" value={editPurchase.date} onChange={e => setEditPurchase({ ...editPurchase, date: e.target.value })} required className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" /></div>
+              <div><label className="block text-sm font-medium text-foreground mb-1">Subtotal</label><input type="number" step="0.01" value={editPurchase.subtotal || 0} onChange={e => setEditPurchase({ ...editPurchase, subtotal: Number(e.target.value), total: Number(e.target.value) })} className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" /></div>
+              <div><label className="block text-sm font-medium text-foreground mb-1">Status</label><select value={editPurchase.status || 'ordered'} onChange={e => setEditPurchase({ ...editPurchase, status: e.target.value as Purchase['status'] })} className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">{statuses.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}</select></div>
             </div>
             <div className="flex justify-end gap-3"><Button variant="ghost" type="button" onClick={() => setShowEdit(false)}>Cancel</Button><Button type="submit">Save Changes</Button></div>
           </form>
         </Modal>
 
         {/* Detail Modal */}
-        <Modal open={showDetail} onClose={() => setShowDetail(false)} title={`Purchase — ${selected.invoice}`} size="md">
-          <div className="space-y-4 text-sm">
-            <div className="grid grid-cols-2 gap-4">
-              <div><p className="text-muted-foreground">Supplier</p><p className="font-medium">{selected.supplier}</p></div>
-              <div><p className="text-muted-foreground">Date</p><p className="font-medium">{formatDate(selected.date)}</p></div>
-              <div><p className="text-muted-foreground">Total</p><p className="font-bold text-primary">{formatCurrencyPair(selected.total, selected.currency, settings.exchangeRate)}</p></div>
-              <div><p className="text-muted-foreground">Status</p><Badge variant={selected.status === 'received' ? 'success' : 'warning'}>{selected.status}</Badge></div>
+        <Modal open={showDetail} onClose={() => setShowDetail(false)} title={`Purchase — ${selected?.invoice_number}`} size="md">
+          {selected && (
+            <div className="space-y-4 text-sm">
+              <div className="grid grid-cols-2 gap-4">
+                <div><p className="text-muted-foreground">Supplier</p><p className="font-medium">{getSupplierName(selected.supplier_id)}</p></div>
+                <div><p className="text-muted-foreground">Date</p><p className="font-medium">{formatDate(selected.created_at)}</p></div>
+                <div><p className="text-muted-foreground">Total</p><p className="font-bold text-primary">{formatCurrency(selected.total, (selected as any).currency || 'SSP')}</p></div>
+                <div><p className="text-muted-foreground">Status</p><Badge variant={selected.status === 'received' ? 'success' : 'warning'}>{selected.status}</Badge></div>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <Button variant="ghost" onClick={() => setShowDetail(false)}>Close</Button>
+                {isAdmin && <Button onClick={() => { setShowDetail(false); openEdit(selected); }}>Edit Purchase</Button>}
+              </div>
             </div>
-            <div className="flex justify-end gap-3 pt-2">
-              <Button variant="ghost" onClick={() => setShowDetail(false)}>Close</Button>
-              {isAdmin && <Button onClick={() => { setShowDetail(false); openEdit(selected); }}>Edit Purchase</Button>}
-            </div>
-          </div>
+          )}
         </Modal>
       </div>
     </AppShell>

@@ -1,17 +1,19 @@
 'use client';
 
 import { useAppStore } from '@/lib/store';
-import { Menu, Wifi, WifiOff, CloudOff } from 'lucide-react';
+import { useSync } from '@/lib/use-sync';
+import { Menu, Wifi, WifiOff, CloudOff, RefreshCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export function Header() {
-  const { toggleSidebar, isOnline, setIsOnline, pendingSync } = useAppStore();
+  const { toggleSidebar, isOnline } = useAppStore();
+  const { pendingCount, syncing, syncNow } = useSync();
   const [currentTime, setCurrentTime] = useState('');
 
   useEffect(() => {
     const update = () => {
       setCurrentTime(
-        new Date().toLocaleString('en-NG', {
+        new Date().toLocaleString('en-SS', {
           weekday: 'short',
           year: 'numeric',
           month: 'short',
@@ -25,17 +27,6 @@ export function Header() {
     const interval = setInterval(update, 60000);
     return () => clearInterval(interval);
   }, []);
-
-  useEffect(() => {
-    const onOnline = () => setIsOnline(true);
-    const onOffline = () => setIsOnline(false);
-    window.addEventListener('online', onOnline);
-    window.addEventListener('offline', onOffline);
-    return () => {
-      window.removeEventListener('online', onOnline);
-      window.removeEventListener('offline', onOffline);
-    };
-  }, [setIsOnline]);
 
   return (
     <header className="h-16 border-b border-border bg-card flex items-center px-4 gap-4 sticky top-0 z-30">
@@ -52,11 +43,15 @@ export function Header() {
         {currentTime}
       </span>
 
-      {pendingSync > 0 && (
-        <div className="flex items-center gap-1 text-xs text-accent bg-accent-50 px-2 py-1 rounded-full">
-          <CloudOff className="w-3 h-3" />
-          {pendingSync} pending
-        </div>
+      {pendingCount > 0 && (
+        <button
+          onClick={() => syncNow()}
+          disabled={!isOnline || syncing}
+          className="flex items-center gap-1.5 text-xs text-accent bg-accent/10 px-3 py-1.5 rounded-full hover:bg-accent/20 transition-colors disabled:opacity-50"
+        >
+          <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} />
+          {syncing ? 'Syncing...' : `${pendingCount} pending`}
+        </button>
       )}
 
       <div className="flex items-center gap-1.5">
@@ -65,7 +60,7 @@ export function Header() {
         ) : (
           <WifiOff className="w-4 h-4 text-danger" />
         )}
-        <span className="text-xs hidden sm:block">
+        <span className={`text-xs hidden sm:block ${isOnline ? 'text-success' : 'text-danger font-medium'}`}>
           {isOnline ? 'Online' : 'Offline'}
         </span>
       </div>
