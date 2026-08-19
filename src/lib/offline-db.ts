@@ -1,6 +1,6 @@
 import { db } from '@/lib/db';
 import { queueMutation } from '@/lib/sync';
-import type { Product, Supplier, Customer, Sale, SaleItem, Purchase, PurchaseItem, Expense, Staff, Payroll } from '@/types/database';
+import type { Product, Supplier, Customer, Sale, SaleItem, Purchase, PurchaseItem, Expense, Staff, Payroll, Budget } from '@/types/database';
 import { generateId } from '@/lib/utils';
 
 function now() { return new Date().toISOString(); }
@@ -187,4 +187,119 @@ export async function addPayroll(data: Omit<Payroll, 'id' | 'created_at'>): Prom
 export async function updatePayroll(id: string, data: Partial<Payroll>): Promise<void> {
   await db.payroll.update(id, data);
   await queueMutation('payroll', 'update', { id, ...data }, id);
+}
+
+// ─── Sale Items ─────────────────────────────────────────
+export async function getSaleItemsBySale(saleId: string): Promise<SaleItem[]> {
+  return db.saleItems.where('sale_id').equals(saleId).toArray();
+}
+
+export async function addSaleItem(data: Omit<SaleItem, 'id'>): Promise<SaleItem> {
+  const item: SaleItem = { ...data, id: generateId() };
+  await db.saleItems.add(item);
+  return item;
+}
+
+export async function deleteSaleItemsBySale(saleId: string): Promise<void> {
+  await db.saleItems.where('sale_id').equals(saleId).delete();
+}
+
+// ─── Purchase Items ─────────────────────────────────────
+export async function getPurchaseItemsByPurchase(purchaseId: string): Promise<PurchaseItem[]> {
+  return db.purchaseItems.where('purchase_id').equals(purchaseId).toArray();
+}
+
+export async function addPurchaseItem(data: Omit<PurchaseItem, 'id'>): Promise<PurchaseItem> {
+  const item: PurchaseItem = { ...data, id: generateId() };
+  await db.purchaseItems.add(item);
+  return item;
+}
+
+export async function deletePurchaseItemsByPurchase(purchaseId: string): Promise<void> {
+  await db.purchaseItems.where('purchase_id').equals(purchaseId).delete();
+}
+
+// ─── Budgets ────────────────────────────────────────────
+export async function getAllBudgets(): Promise<Budget[]> {
+  return db.budgets.toArray();
+}
+
+export async function addBudget(data: Omit<Budget, 'id' | 'created_at' | 'spent'>): Promise<Budget> {
+  const budget: Budget = { ...data, id: generateId(), spent: 0, created_at: now() };
+  await db.budgets.add(budget);
+  await queueMutation('budgets', 'create', budget, budget.id);
+  return budget;
+}
+
+export async function updateBudget(id: string, data: Partial<Budget>): Promise<void> {
+  await db.budgets.update(id, data);
+  await queueMutation('budgets', 'update', { id, ...data }, id);
+}
+
+export async function deleteBudget(id: string): Promise<void> {
+  await db.budgets.delete(id);
+  await queueMutation('budgets', 'delete', { id }, id);
+}
+
+// ─── Query helpers ──────────────────────────────────────
+export async function getProductsByCategory(): Promise<Record<string, number>> {
+  const products = await db.products.toArray();
+  const map: Record<string, number> = {};
+  for (const p of products) { map[p.category] = (map[p.category] || 0) + p.quantity_in_stock; }
+  return map;
+}
+
+export async function getTopSellingProducts(): Promise<{ name: string; sold: number; revenue: number }[]> {
+  const items = await db.saleItems.toArray();
+  const products = await db.products.toArray();
+  const productMap = new Map(products.map(p => [p.id, p]));
+  const tally: Record<string, { sold: number; revenue: number; name: string }> = {};
+  for (const item of items) {
+    const prod = productMap.get(item.product_id);
+    const name = prod?.name || 'Unknown';
+    if (!tally[item.product_id]) tally[item.product_id] = { sold: 0, revenue: 0, name };
+    tally[item.product_id].sold += item.quantity;
+    tally[item.product_id].revenue += item.total;
+  }
+  return Object.values(tally).sort((a, b) => b.revenue - a.revenue);
+}
+
+export async function getSlowMovingProducts(): Promise<{ name: string; stock: number; lastSold: string | null }[]> {
+  const products = await db.products.toArray();
+  const sales = await db.sales.toArray();
+  const items = await db.saleItems.toArray();
+  const lastSoldMap: Record<string, string> = {};
+  for (const sale of sales) {
+    const saleItems = items.filter(i => i.sale_id === sale.id);
+    for (const item of saleItems) {
+      if (!lastSoldMap[item.product_id] || sale.created_at > lastSoldMap[item.product_id]) {
+        lastSoldMap[item.product_id] = sale.created_at;
+      }
+    }
+  }
+  return products
+    .filter(p => p.is_active)
+    .map(p => ({ name: p.name, stock: p.quantity_in_stock, lastSold: lastSoldMap[p.id] || null }))
+    .sort((a, b) => b.stock - a.stock);
+}
+
+export async function getDailySummary(date: string): Promise<{ income: number; expenses: number; transactions: number }> {
+  const sales = await db.sales.where('created_at').startsWith(date).toArray();
+  const expenses = await db.expenses.where('date').equals(date).toArray();
+  const completedSales = sales.filter(s => s.status === 'completed');
+  return {
+    income: completedSales.reduce((sum, s) => sum + s.total, 0),
+    expenses: expenses.reduce((sum, e) => sum + e.amount, 0),
+    transactions: completedSales.length,
+  };
+}
+
+export async function getTotalStockValue(): Promise<{ ssp: number; usd: number }> {
+  const products = await db.products.toArray();
+  let ssp = 0, usd = 0;
+  for (const p of products) {
+    if (p.currency === 'USD') usd += p.cost_price * p.quantity_in_stock;
+    else ssp += p.cost_price * p.quantity_in_stock;
+  }
+  return { ssp, usd };
 }

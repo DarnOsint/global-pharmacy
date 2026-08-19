@@ -139,6 +139,17 @@ export interface ExpenseCategory {
   description: string | null;
 }
 
+export interface Budget {
+  id: string;
+  category: string;
+  amount: number;
+  currency: 'SSP' | 'USD';
+  period: 'monthly' | 'quarterly' | 'yearly';
+  month: string;
+  spent: number;
+  created_at: string;
+}
+
 export type PaymentMethod = 'cash' | 'card' | 'transfer' | 'credit';
 export type UserRole = 'admin' | 'pharmacist' | 'cashier' | 'store_manager';
 
@@ -155,6 +166,7 @@ export interface Database {
       expenses: { Row: Expense; Insert: Partial<Expense>; Update: Partial<Expense> };
       staff: { Row: Staff; Insert: Partial<Staff>; Update: Partial<Staff> };
       payroll: { Row: Payroll; Insert: Partial<Payroll>; Update: Partial<Payroll> };
+      budgets: { Row: Budget; Insert: Partial<Budget>; Update: Partial<Budget> };
     };
     Enums: {
       user_role: UserRole;

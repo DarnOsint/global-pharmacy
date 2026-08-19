@@ -9,12 +9,13 @@ import { cn, daysUntilExpiry } from '@/lib/utils';
 import {
   LayoutDashboard, Package, ShoppingCart, Receipt,
   CreditCard, Users, BarChart3, AlertTriangle,
-  Settings, X, Pill, LogOut
+  Settings, X, Pill, LogOut, ScanLine
 } from 'lucide-react';
 
 import { useSettingsStore } from '@/lib/settings-store';
 
 const navItems = [
+  { href: '/pos', label: 'POS', icon: ScanLine },
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/inventory', label: 'Inventory', icon: Package },
   { href: '/sales', label: 'Sales', icon: ShoppingCart },
