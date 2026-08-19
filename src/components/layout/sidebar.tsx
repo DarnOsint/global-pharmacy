@@ -14,17 +14,25 @@ import {
 
 import { useSettingsStore } from '@/lib/settings-store';
 
-const navItems = [
-  { href: '/pos', label: 'POS', icon: ScanLine },
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/inventory', label: 'Inventory', icon: Package },
-  { href: '/sales', label: 'Sales', icon: ShoppingCart },
-  { href: '/purchases', label: 'Purchases', icon: Receipt },
-  { href: '/expenses', label: 'Expenses', icon: CreditCard },
-  { href: '/hr', label: 'HR & Payroll', icon: Users },
-  { href: '/alerts', label: 'Expiry Alerts', icon: AlertTriangle, hasAlert: true },
-  { href: '/reports', label: 'Reports', icon: BarChart3 },
-  { href: '/settings', label: 'Settings', icon: Settings },
+interface NavItem {
+  href: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  roles: string[];
+  hasAlert?: boolean;
+}
+
+const navItems: NavItem[] = [
+  { href: '/pos', label: 'POS', icon: ScanLine, roles: ['cashier', 'pharmacist', 'store_manager', 'admin'] },
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin'] },
+  { href: '/inventory', label: 'Inventory', icon: Package, roles: ['pharmacist', 'store_manager', 'admin'] },
+  { href: '/sales', label: 'Sales', icon: ShoppingCart, roles: ['admin'] },
+  { href: '/purchases', label: 'Purchases', icon: Receipt, roles: ['pharmacist', 'store_manager', 'admin'] },
+  { href: '/expenses', label: 'Expenses', icon: CreditCard, roles: ['admin'] },
+  { href: '/hr', label: 'HR & Payroll', icon: Users, roles: ['admin'] },
+  { href: '/alerts', label: 'Expiry Alerts', icon: AlertTriangle, roles: ['pharmacist', 'store_manager', 'admin'], hasAlert: true },
+  { href: '/reports', label: 'Reports', icon: BarChart3, roles: ['admin'] },
+  { href: '/settings', label: 'Settings', icon: Settings, roles: ['admin'] },
 ];
 
 const roleBadge: Record<string, string> = {
@@ -34,22 +42,22 @@ const roleBadge: Record<string, string> = {
   store_manager: 'bg-blue-100 text-blue-700',
 };
 
-const mockProducts = [
-  { expiry_date: '2027-06-15', alert_days: 90 },
-  { expiry_date: '2027-12-20', alert_days: 30 },
-  { expiry_date: '2027-03-10', alert_days: 60 },
-  { expiry_date: '2027-09-25', alert_days: 90 },
-  { expiry_date: '2027-08-30', alert_days: 30 },
-  { expiry_date: '2026-08-25', alert_days: 14 },
-  { expiry_date: '2027-05-18', alert_days: 60 },
-  { expiry_date: '2028-01-01', alert_days: 90 },
-];
-
 function getExpiryAlertCount(): number {
-  return mockProducts.filter(p => {
-    const days = daysUntilExpiry(p.expiry_date);
-    return days <= p.alert_days;
-  }).length;
+  try {
+    const raw = localStorage.getItem('GlobalPharmacyDB');
+    if (!raw) return 0;
+    const data = JSON.parse(raw);
+    if (!data?.products) return 0;
+    let count = 0;
+    for (const p of data.products) {
+      if (!p.is_active) continue;
+      const days = daysUntilExpiry(p.expiry_date);
+      if (days <= (p.alert_days || 30)) count++;
+    }
+    return count;
+  } catch {
+    return 0;
+  }
 }
 
 export function Sidebar() {
@@ -60,9 +68,11 @@ export function Sidebar() {
   const settings = useSettingsStore();
   const [alertCount, setAlertCount] = useState(0);
 
+  const visibleItems = user ? navItems.filter(item => item.roles.includes(user.role)) : [];
+
   useEffect(() => {
     setAlertCount(getExpiryAlertCount());
-    const interval = setInterval(() => setAlertCount(getExpiryAlertCount()), 60000);
+    const interval = setInterval(() => setAlertCount(getExpiryAlertCount()), 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -105,7 +115,7 @@ export function Sidebar() {
         </div>
 
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-          {navItems.map((item) => {
+          {visibleItems.map((item) => {
             const isActive = pathname === item.href;
             return (
               <Link
