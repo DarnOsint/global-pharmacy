@@ -152,32 +152,90 @@ export default function POSPage() {
   };
 
   const printReceipt = () => {
-    const el = receiptRef.current;
-    if (!el) return;
-    const printWin = window.open('', '_blank', 'width=400,height=600');
+    if (!completedSale) return;
+    const storeName = settings.storeName || 'Global Pharmacy';
+    const addr = settings.address || 'Juba, South Sudan';
+    const phone = settings.phone || '';
+    const license = settings.licenseNumber || '';
+    const dateStr = new Date(completedSale.sale.created_at).toLocaleDateString('en-SS');
+    const timeStr = new Date(completedSale.sale.created_at).toLocaleTimeString('en-SS');
+    const cashierName = user ? `${user.first_name} ${user.last_name}` : '';
+    const W = 48;
+    const hr = '─'.repeat(W);
+    const dhr = '═'.repeat(W);
+
+    const pad = (s: string, w: number) => s.length >= w ? s.slice(0, w) : s + ' '.repeat(w - s.length);
+    const padR = (s: string, w: number) => s.length >= w ? s.slice(0, w) : ' '.repeat(w - s.length) + s;
+    const center = (s: string, w: number) => {
+      const space = w - s.length;
+      if (space <= 0) return s.slice(0, w);
+      const left = Math.floor(space / 2);
+      return ' '.repeat(left) + s + ' '.repeat(space - left);
+    };
+    const line = (label: string, value: string) => pad(label, W - value.length) + value;
+
+    let receipt = '';
+    receipt += '\n';
+    if (settings.logoBase64) {
+      receipt += '   [LOGO]\n';
+    }
+    receipt += center(storeName.toUpperCase(), W) + '\n';
+    receipt += center(addr, W) + '\n';
+    if (phone) receipt += center(`Tel: ${phone}`, W) + '\n';
+    if (license) receipt += center(`Lic: ${license}`, W) + '\n';
+    receipt += '\n';
+    receipt += dhr + '\n';
+    receipt += center('SALES RECEIPT', W) + '\n';
+    receipt += dhr + '\n';
+    receipt += '\n';
+    receipt += line('Invoice: ', completedSale.sale.invoice_number) + '\n';
+    receipt += line('Date: ', dateStr) + '\n';
+    receipt += line('Time: ', timeStr) + '\n';
+    receipt += line('Cashier: ', cashierName) + '\n';
+    receipt += '\n';
+    receipt += hr + '\n';
+    receipt += pad('ITEM', 28) + padR('QTY', 4) + padR('PRICE', 8) + padR('TOTAL', 8) + '\n';
+    receipt += hr + '\n';
+    for (const item of completedSale.items) {
+      const name = item.product.name.length > 28 ? item.product.name.slice(0, 25) + '...' : item.product.name;
+      const price = formatCurrency(item.product.unit_price, item.product.currency);
+      const total = formatCurrency(item.product.unit_price * item.quantity, item.product.currency);
+      receipt += pad(name, 28) + padR(String(item.quantity), 4) + padR(price, 8) + padR(total, 8) + '\n';
+    }
+    receipt += hr + '\n';
+    receipt += '\n';
+    receipt += pad('TOTAL:', W - 12) + padR(formatCurrency(completedSale.sale.total, completedSale.sale.currency), 12) + '\n';
+    receipt += pad('Payment:', W - 12) + padR(completedSale.sale.payment_method.toUpperCase(), 12) + '\n';
+    receipt += '\n';
+    receipt += dhr + '\n';
+    receipt += '\n';
+    receipt += center('Thank you for your purchase!', W) + '\n';
+    receipt += center(storeName, W) + '\n';
+    receipt += '\n\n\n';
+
+    const printWin = window.open('', '_blank', 'width=320,height=600');
     if (!printWin) return;
-    printWin.document.write(`
-      <!DOCTYPE html>
-      <html><head><title>Receipt</title>
-      <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Courier New', monospace; font-size: 12px; padding: 16px; max-width: 320px; margin: 0 auto; color: #000; }
-        .logo { text-align: center; margin-bottom: 8px; }
-        .logo img { max-height: 60px; }
-        .store-name { text-align: center; font-size: 16px; font-weight: bold; }
-        .store-info { text-align: center; font-size: 10px; color: #666; margin-bottom: 12px; }
-        .divider { border-top: 1px dashed #000; margin: 8px 0; }
-        .row { display: flex; justify-content: space-between; margin: 3px 0; }
-        .row-bold { font-weight: bold; }
-        .item-name { flex: 1; }
-        .item-qty { width: 40px; text-align: center; }
-        .item-price { width: 80px; text-align: right; }
-        .total-section { border-top: 2px solid #000; margin-top: 8px; padding-top: 8px; }
-        .footer { text-align: center; font-size: 10px; margin-top: 16px; color: #666; }
-      </style></head><body>
-      ${el.innerHTML}
-      </body></html>
-    `);
+    printWin.document.write(`<!DOCTYPE html>
+<html><head><title>Receipt</title>
+<style>
+@page { size: 80mm auto; margin: 0; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  line-height: 1.3;
+  width: 80mm;
+  padding: 2mm;
+  color: #000;
+  background: #fff;
+}
+pre { white-space: pre; margin: 0; }
+.logo { text-align: center; margin-bottom: 4px; }
+.logo img { max-height: 15mm; max-width: 40mm; }
+</style></head><body>
+${settings.logoBase64 ? `<div class="logo"><img src="${settings.logoBase64}" /></div>` : ''}
+<pre>${receipt.replace(/[ LOGO]/g, (m) => m).replace('[LOGO]', '')}</pre>
+</body></html>`);
     printWin.document.close();
     printWin.focus();
     setTimeout(() => { printWin.print(); printWin.close(); }, 500);
