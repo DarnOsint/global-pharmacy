@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useAppStore } from '@/lib/store';
 import { useAuthStore } from '@/lib/auth';
 import { cn, daysUntilExpiry } from '@/lib/utils';
+import { db } from '@/lib/db';
 import {
   LayoutDashboard, Package, ShoppingCart, Receipt,
   CreditCard, Users, BarChart3, AlertTriangle,
@@ -42,22 +43,8 @@ const roleBadge: Record<string, string> = {
   store_manager: 'bg-blue-100 text-blue-700',
 };
 
-function getExpiryAlertCount(): number {
-  try {
-    const raw = localStorage.getItem('GlobalPharmacyDB');
-    if (!raw) return 0;
-    const data = JSON.parse(raw);
-    if (!data?.products) return 0;
-    let count = 0;
-    for (const p of data.products) {
-      if (!p.is_active) continue;
-      const days = daysUntilExpiry(p.expiry_date);
-      if (days <= (p.alert_days || 30)) count++;
-    }
-    return count;
-  } catch {
-    return 0;
-  }
+function countExpiryAlerts(products: { is_active: boolean; expiry_date: string; alert_days?: number }[]): number {
+  return products.filter(p => p.is_active && daysUntilExpiry(p.expiry_date) <= (p.alert_days || 30)).length;
 }
 
 export function Sidebar() {
@@ -71,8 +58,14 @@ export function Sidebar() {
   const visibleItems = user ? navItems.filter(item => item.roles.includes(user.role)) : [];
 
   useEffect(() => {
-    setAlertCount(getExpiryAlertCount());
-    const interval = setInterval(() => setAlertCount(getExpiryAlertCount()), 30000);
+    const loadCount = async () => {
+      try {
+        const products = await db.products.toArray();
+        setAlertCount(countExpiryAlerts(products));
+      } catch { setAlertCount(0); }
+    };
+    loadCount();
+    const interval = setInterval(loadCount, 30000);
     return () => clearInterval(interval);
   }, []);
 

@@ -1,8 +1,9 @@
 {
   "name": "Global Pharmacy",
   "short_name": "GlobalPharm",
-  "description": "Pharmacy Management System",
+  "description": "Pharmacy Management System — Works Fully Offline",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#f8fafc",
   "theme_color": "#1e40af",
@@ -12,7 +13,13 @@
       "src": "/icons/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     }
   ],
   "categories": ["business", "medical", "health"],

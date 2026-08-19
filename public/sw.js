@@ -1,24 +1,6 @@
-const CACHE_NAME = 'global-pharmacy-v2';
-const STATIC_ASSETS = [
-  '/',
-  '/manifest.json',
-  '/icons/icon.svg',
-  '/pos',
-  '/dashboard',
-  '/inventory',
-  '/sales',
-  '/purchases',
-  '/expenses',
-  '/hr',
-  '/alerts',
-  '/reports',
-  '/settings',
-];
+const CACHE_NAME = 'global-pharmacy-v3';
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
-  );
   self.skipWaiting();
 });
 
@@ -32,32 +14,23 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return;
-  if (event.request.url.includes('supabase')) return;
+  const { request } = event;
+  if (request.method !== 'GET') return;
+  if (request.url.includes('supabase')) return;
 
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const fetchPromise = fetch(event.request)
-        .then((response) => {
-          if (response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          }
-          return response;
-        })
-        .catch(() => cached);
-
-      return cached || fetchPromise;
+    caches.open(CACHE_NAME).then(async (cache) => {
+      try {
+        const response = await fetch(request);
+        if (response.ok) {
+          cache.put(request, response.clone());
+        }
+        return response;
+      } catch {
+        const cached = await cache.match(request);
+        if (cached) return cached;
+        return new Response('Offline', { status: 503, statusText: 'Offline' });
+      }
     })
   );
-});
-
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'sync-pending') {
-    event.waitUntil(
-      self.clients.matchAll().then((clients) => {
-        clients.forEach((client) => client.postMessage({ type: 'SYNC_REQUEST' }));
-      })
-    );
-  }
 });

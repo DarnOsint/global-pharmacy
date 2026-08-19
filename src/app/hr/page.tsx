@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AuthGuard } from '@/components/auth-guard';
 import { AppShell } from '@/components/layout/app-shell';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Modal } from '@/components/ui/modal';
@@ -12,20 +12,10 @@ import { Select } from '@/components/ui/select';
 import { Users, Plus, Edit2 } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { useAuthStore } from '@/lib/auth';
-
-const mockStaff = [
-  { id: 'a0000000-0000-0000-0000-000000000001', first_name: 'Clara', last_name: 'Evelino Modi', role: 'admin', phone: '+211920123456', email: 'clara@globalpharmacy.ss', hire_date: '2024-01-15', salary: 450000, is_active: true },
-  { id: 'a0000000-0000-0000-0000-000000000002', first_name: 'Nyamal', last_name: 'Kuol', role: 'pharmacist', phone: '+211921234567', email: 'nyamal@globalpharmacy.ss', hire_date: '2024-03-20', salary: 350000, is_active: true },
-  { id: 'a0000000-0000-0000-0000-000000000003', first_name: 'Bol', last_name: 'Mawut', role: 'pharmacist', phone: '+211922345678', email: 'bol@globalpharmacy.ss', hire_date: '2024-06-10', salary: 350000, is_active: true },
-  { id: 'a0000000-0000-0000-0000-000000000004', first_name: 'Akello', last_name: 'James', role: 'cashier', phone: '+211923456789', email: 'akello@globalpharmacy.ss', hire_date: '2025-01-05', salary: 200000, is_active: true },
-  { id: 'a0000000-0000-0000-0000-000000000005', first_name: 'Kur', last_name: 'Lual', role: 'store_manager', phone: '+211924567890', email: 'kur@globalpharmacy.ss', hire_date: '2025-06-15', salary: 280000, is_active: true },
-];
-
-const mockPayroll = [
-  { id: '1', staff_name: 'Clara Evelino Modi', period_start: '2026-08-01', period_end: '2026-08-15', base_salary: 225000, allowances: 50000, deductions: 25000, net_pay: 250000, status: 'paid' },
-  { id: '2', staff_name: 'Nyamal Kuol', period_start: '2026-08-01', period_end: '2026-08-15', base_salary: 175000, allowances: 30000, deductions: 15000, net_pay: 190000, status: 'paid' },
-  { id: '3', staff_name: 'Akello James', period_start: '2026-08-01', period_end: '2026-08-15', base_salary: 100000, allowances: 15000, deductions: 10000, net_pay: 105000, status: 'pending' },
-];
+import { useSync } from '@/lib/use-sync';
+import { getAllStaff, addStaff, updateStaff, getAllPayroll, addPayroll } from '@/lib/offline-db';
+import { seedOfflineData } from '@/lib/seed-data';
+import type { Staff, Payroll } from '@/types/database';
 
 const roleColors: Record<string, 'info' | 'success' | 'warning' | 'default'> = {
   admin: 'info', pharmacist: 'success', cashier: 'warning', store_manager: 'default',
@@ -34,11 +24,88 @@ const roleColors: Record<string, 'info' | 'success' | 'warning' | 'default'> = {
 export default function HRPage() {
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'admin';
+  const { refreshCount } = useSync();
   const [activeTab, setActiveTab] = useState<'staff' | 'payroll'>('staff');
+  const [staffList, setStaffList] = useState<Staff[]>([]);
+  const [payrollList, setPayrollList] = useState<Payroll[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showAddStaff, setShowAddStaff] = useState(false);
   const [showEditStaff, setShowEditStaff] = useState(false);
-  const [editStaff, setEditStaff] = useState(mockStaff[0]);
+  const [editStaff, setEditStaff] = useState<Staff | null>(null);
   const [showPayrollModal, setShowPayrollModal] = useState(false);
+
+  const loadData = useCallback(async () => {
+    await seedOfflineData();
+    const [staff, payroll] = await Promise.all([getAllStaff(), getAllPayroll()]);
+    setStaffList(staff);
+    setPayrollList(payroll);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  const getStaffName = (staffId: string) => {
+    const s = staffList.find(s => s.id === staffId);
+    return s ? `${s.first_name} ${s.last_name}` : 'Unknown';
+  };
+
+  const handleAddStaff = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const form = e.target as HTMLFormElement;
+    await addStaff({
+      first_name: (form.querySelector('#fname') as HTMLInputElement).value,
+      last_name: (form.querySelector('#lname') as HTMLInputElement).value,
+      role: (form.querySelector('#role') as HTMLSelectElement).value as Staff['role'],
+      phone: (form.querySelector('#phone') as HTMLInputElement).value,
+      email: (form.querySelector('#email') as HTMLInputElement).value,
+      salary: Number((form.querySelector('#salary') as HTMLInputElement).value),
+      hire_date: (form.querySelector('#hire_date') as HTMLInputElement).value,
+      is_active: true,
+    });
+    await refreshCount();
+    setShowAddStaff(false);
+    await loadData();
+  };
+
+  const handleEditStaff = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editStaff) return;
+    const form = e.target as HTMLFormElement;
+    await updateStaff(editStaff.id, {
+      first_name: (form.querySelector('#efname') as HTMLInputElement).value,
+      last_name: (form.querySelector('#elname') as HTMLInputElement).value,
+      role: (form.querySelector('#erole') as HTMLSelectElement).value as Staff['role'],
+      phone: (form.querySelector('#ephone') as HTMLInputElement).value,
+      email: (form.querySelector('#eemail') as HTMLInputElement).value,
+      salary: Number((form.querySelector('#esalary') as HTMLInputElement).value),
+    });
+    await refreshCount();
+    setShowEditStaff(false);
+    await loadData();
+  };
+
+  const handleProcessPayroll = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const form = e.target as HTMLFormElement;
+    const staffId = (form.querySelector('#pstaff') as HTMLSelectElement).value;
+    const base = Number((form.querySelector('#pbase') as HTMLInputElement).value);
+    const allowances = Number((form.querySelector('#pallow') as HTMLInputElement).value);
+    const deductions = Number((form.querySelector('#pdeduct') as HTMLInputElement).value);
+    await addPayroll({
+      staff_id: staffId,
+      period_start: (form.querySelector('#pstart') as HTMLInputElement).value,
+      period_end: (form.querySelector('#pend') as HTMLInputElement).value,
+      base_salary: base,
+      allowances,
+      deductions,
+      net_pay: base + allowances - deductions,
+      status: 'pending',
+      paid_at: null,
+    });
+    await refreshCount();
+    setShowPayrollModal(false);
+    await loadData();
+  };
 
   return (
     <AuthGuard>
@@ -47,7 +114,7 @@ export default function HRPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold">HR & Payroll</h1>
-            <p className="text-sm text-muted-foreground">Manage staff and payroll</p>
+            <p className="text-sm text-muted-foreground">{staffList.length} staff members</p>
           </div>
           {isAdmin && (
             <Button onClick={() => activeTab === 'staff' ? setShowAddStaff(true) : setShowPayrollModal(true)}>
@@ -79,12 +146,12 @@ export default function HRPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {mockStaff.map((staff) => (
+                  {staffList.map((staff) => (
                     <tr key={staff.id} className="border-b border-border hover:bg-muted/30">
                       <td className="p-3 font-medium">{staff.first_name} {staff.last_name}</td>
-                      <td className="p-3"><Badge variant={roleColors[staff.role]}>{staff.role}</Badge></td>
+                      <td className="p-3"><Badge variant={roleColors[staff.role]}>{staff.role.replace('_', ' ')}</Badge></td>
                       <td className="p-3 text-muted-foreground">{staff.phone}</td>
-                      <td className="p-3 text-right font-medium">{formatCurrency(staff.salary)}</td>
+                      <td className="p-3 text-right font-medium">{formatCurrency(staff.salary, 'SSP')}</td>
                       <td className="p-3"><Badge variant={staff.is_active ? 'success' : 'danger'}>{staff.is_active ? 'Active' : 'Inactive'}</Badge></td>
                       {isAdmin && (
                         <td className="p-3 text-right">
@@ -116,14 +183,14 @@ export default function HRPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {mockPayroll.map((p) => (
+                  {payrollList.map((p) => (
                     <tr key={p.id} className="border-b border-border hover:bg-muted/30">
-                      <td className="p-3 font-medium">{p.staff_name}</td>
+                      <td className="p-3 font-medium">{getStaffName(p.staff_id)}</td>
                       <td className="p-3 text-muted-foreground text-xs">{formatDate(p.period_start)} - {formatDate(p.period_end)}</td>
-                      <td className="p-3 text-right">{formatCurrency(p.base_salary)}</td>
-                      <td className="p-3 text-right text-success">+{formatCurrency(p.allowances)}</td>
-                      <td className="p-3 text-right text-danger">-{formatCurrency(p.deductions)}</td>
-                      <td className="p-3 text-right font-bold text-primary">{formatCurrency(p.net_pay)}</td>
+                      <td className="p-3 text-right">{formatCurrency(p.base_salary, 'SSP')}</td>
+                      <td className="p-3 text-right text-success">+{formatCurrency(p.allowances, 'SSP')}</td>
+                      <td className="p-3 text-right text-danger">-{formatCurrency(p.deductions, 'SSP')}</td>
+                      <td className="p-3 text-right font-bold text-primary">{formatCurrency(p.net_pay, 'SSP')}</td>
                       <td className="p-3"><Badge variant={p.status === 'paid' ? 'success' : 'warning'}>{p.status}</Badge></td>
                     </tr>
                   ))}
@@ -133,33 +200,35 @@ export default function HRPage() {
           </Card>
         )}
 
-        <Modal open={showEditStaff} onClose={() => setShowEditStaff(false)} title={`Edit Staff - ${editStaff.first_name} ${editStaff.last_name}`} size="lg">
-          <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); setShowEditStaff(false); }}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input label="First Name" id="efname" defaultValue={editStaff.first_name} required />
-              <Input label="Last Name" id="elname" defaultValue={editStaff.last_name} required />
-              <Select label="Role" id="erole" options={[
-                { value: 'admin', label: 'Admin' }, { value: 'pharmacist', label: 'Pharmacist' },
-                { value: 'cashier', label: 'Cashier' }, { value: 'store_manager', label: 'Store Manager' },
-              ]} />
-              <Input label="Phone" id="ephone" defaultValue={editStaff.phone} required />
-              <Input label="Email" id="eemail" type="email" defaultValue={editStaff.email} required />
-              <Input label="Monthly Salary (SSP)" id="esalary" type="number" defaultValue={editStaff.salary} required />
-            </div>
-            <div className="flex justify-end gap-3">
-              <Button variant="ghost" type="button" onClick={() => setShowEditStaff(false)}>Cancel</Button>
-              <Button type="submit">Save Changes</Button>
-            </div>
-          </form>
+        <Modal open={showEditStaff} onClose={() => setShowEditStaff(false)} title={`Edit Staff`} size="lg">
+          {editStaff && (
+            <form className="space-y-4" onSubmit={handleEditStaff}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input label="First Name" id="efname" defaultValue={editStaff.first_name} required />
+                <Input label="Last Name" id="elname" defaultValue={editStaff.last_name} required />
+                <Select label="Role" id="erole" defaultValue={editStaff.role} options={[
+                  { value: 'admin', label: 'Admin' }, { value: 'pharmacist', label: 'Pharmacist' },
+                  { value: 'cashier', label: 'Cashier' }, { value: 'store_manager', label: 'Store Manager' },
+                ]} />
+                <Input label="Phone" id="ephone" defaultValue={editStaff.phone} required />
+                <Input label="Email" id="eemail" type="email" defaultValue={editStaff.email} required />
+                <Input label="Monthly Salary (SSP)" id="esalary" type="number" defaultValue={editStaff.salary} required />
+              </div>
+              <div className="flex justify-end gap-3">
+                <Button variant="ghost" type="button" onClick={() => setShowEditStaff(false)}>Cancel</Button>
+                <Button type="submit">Save Changes</Button>
+              </div>
+            </form>
+          )}
         </Modal>
 
         <Modal open={showAddStaff} onClose={() => setShowAddStaff(false)} title="Add Staff Member" size="lg">
-          <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); setShowAddStaff(false); }}>
+          <form className="space-y-4" onSubmit={handleAddStaff}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input label="First Name" id="fname" required />
               <Input label="Last Name" id="lname" required />
               <Select label="Role" id="role" options={[
-                { value: 'admin', label: 'Admin' }, { value: 'pharmacist', label: 'Pharmacist' },
+                { value: 'pharmacist', label: 'Pharmacist' },
                 { value: 'cashier', label: 'Cashier' }, { value: 'store_manager', label: 'Store Manager' },
               ]} />
               <Input label="Phone" id="phone" required />
@@ -170,6 +239,23 @@ export default function HRPage() {
             <div className="flex justify-end gap-3">
               <Button variant="ghost" type="button" onClick={() => setShowAddStaff(false)}>Cancel</Button>
               <Button type="submit">Save Staff</Button>
+            </div>
+          </form>
+        </Modal>
+
+        <Modal open={showPayrollModal} onClose={() => setShowPayrollModal(false)} title="Process Payroll" size="lg">
+          <form className="space-y-4" onSubmit={handleProcessPayroll}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Select label="Staff Member" id="pstaff" options={staffList.filter(s => s.is_active).map(s => ({ value: s.id, label: `${s.first_name} ${s.last_name}` }))} />
+              <Input label="Period Start" id="pstart" type="date" required />
+              <Input label="Period End" id="pend" type="date" required />
+              <Input label="Base Salary (SSP)" id="pbase" type="number" required />
+              <Input label="Allowances (SSP)" id="pallow" type="number" defaultValue={0} />
+              <Input label="Deductions (SSP)" id="pdeduct" type="number" defaultValue={0} />
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button variant="ghost" type="button" onClick={() => setShowPayrollModal(false)}>Cancel</Button>
+              <Button type="submit">Process Payroll</Button>
             </div>
           </form>
         </Modal>

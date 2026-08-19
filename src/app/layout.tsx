@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { PWAProvider } from "@/components/pwa-provider";
 
 export const metadata: Metadata = {
   title: "Global Pharmacy",
@@ -36,7 +37,9 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
       </head>
       <body className="antialiased min-h-screen bg-background text-foreground">
-        {children}
+        <PWAProvider>
+          {children}
+        </PWAProvider>
       </body>
     </html>
   );

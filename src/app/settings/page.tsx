@@ -8,7 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useSettingsStore } from '@/lib/settings-store';
 import { useAuthStore } from '@/lib/auth';
-import { Settings, Store, Database, Bell, Shield, Upload, X, Image, User, Save, AlertTriangle, DollarSign, Tag, Plus, Trash2 } from 'lucide-react';
+import { Settings, Store, Database, Bell, Shield, Upload, X, Image, User, Save, AlertTriangle, DollarSign, Tag, Plus, Trash2, Download } from 'lucide-react';
+import * as XLSX from 'xlsx';
+import { getAllProducts, getAllSales, getAllExpenses, getAllPurchases, getAllStaff } from '@/lib/offline-db';
 
 export default function SettingsPage() {
   const { user } = useAuthStore();
@@ -58,6 +60,52 @@ export default function SettingsPage() {
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+  };
+
+  const exportFileRef = useRef<HTMLInputElement>(null);
+
+  const handleExportAll = async () => {
+    const [products, sales, expenses, purchases, staff] = await Promise.all([
+      getAllProducts(), getAllSales(), getAllExpenses(), getAllPurchases(), getAllStaff(),
+    ]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(products.map(p => ({
+      Name: p.name, SKU: p.sku, Category: p.category, Stock: p.quantity_in_stock,
+      'Unit Price': p.unit_price, 'Cost Price': p.cost_price, Currency: p.currency,
+      Expiry: p.expiry_date, Manufacturer: p.manufacturer,
+    }))), 'Inventory');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sales.map(s => ({
+      Invoice: s.invoice_number, Date: s.created_at.slice(0,10), Total: s.total,
+      Currency: s.currency, Payment: s.payment_method, Status: s.status,
+    }))), 'Sales');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(expenses.map(e => ({
+      Date: e.date, Category: e.category, Description: e.description,
+      Amount: e.amount, Currency: e.currency,
+    }))), 'Expenses');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(purchases.map(p => ({
+      Invoice: p.invoice_number, Date: p.created_at.slice(0,10), Total: p.total,
+      Currency: p.currency, Status: p.status,
+    }))), 'Purchases');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(staff.map(s => ({
+      Name: `${s.first_name} ${s.last_name}`, Role: s.role, Phone: s.phone,
+      Email: s.email, Salary: s.salary, Status: s.is_active ? 'Active' : 'Inactive',
+    }))), 'Staff');
+    const settingsData = { storeName: settings.storeName, address: settings.address, phone: settings.phone, email: settings.email, licenseNumber: settings.licenseNumber, exchangeRate: settings.exchangeRate, categories: settings.categories };
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([settingsData]), 'Settings');
+    XLSX.writeFile(wb, `global-pharmacy-backup-${new Date().toISOString().slice(0,10)}.xlsx`);
+  };
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      alert(`Imported workbook with sheets: ${workbook.SheetNames.join(', ')}\n\nFull import support coming soon. For now, use Inventory Import on the Inventory page.`);
+    } catch {
+      alert('Failed to read file');
+    }
+    if (exportFileRef.current) exportFileRef.current.value = '';
   };
 
   return (
@@ -353,8 +401,9 @@ export default function SettingsPage() {
                     All data is stored locally using IndexedDB. When online, changes sync automatically to Supabase.
                   </p>
                   <div className="mt-3 flex gap-2">
-                    <Button variant="outline" size="sm">Export Data</Button>
-                    <Button variant="outline" size="sm">Import Data</Button>
+                    <Button variant="outline" size="sm" onClick={handleExportAll}><Download className="w-4 h-4 mr-1" /> Export Data</Button>
+                    <Button variant="outline" size="sm" onClick={() => exportFileRef.current?.click()}><Upload className="w-4 h-4 mr-1" /> Import Data</Button>
+                    <input ref={exportFileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImportFile} />
                   </div>
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-lg border border-border">

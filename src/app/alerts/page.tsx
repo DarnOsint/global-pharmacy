@@ -1,121 +1,122 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AuthGuard } from '@/components/auth-guard';
 import { AppShell } from '@/components/layout/app-shell';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Bell, CheckCircle, XCircle, Filter } from 'lucide-react';
-import { formatDate, daysUntilExpiry } from '@/lib/utils';
-
-const products = [
-  { id: '1', name: 'Amoxicillin 500mg', batch: 'BCH-001', quantity: 45, expiry_date: '2027-06-15', alert_days: 90 },
-  { id: '2', name: 'Paracetamol 500mg', batch: 'BCH-002', quantity: 200, expiry_date: '2027-12-20', alert_days: 30 },
-  { id: '3', name: 'Metformin 850mg', batch: 'BCH-003', quantity: 30, expiry_date: '2027-03-10', alert_days: 60 },
-  { id: '4', name: 'Lisinopril 10mg', batch: 'BCH-004', quantity: 60, expiry_date: '2027-09-25', alert_days: 90 },
-  { id: '5', name: 'Vitamin C 1000mg', batch: 'BCH-005', quantity: 120, expiry_date: '2027-08-30', alert_days: 30 },
-  { id: '6', name: 'Ibuprofen 400mg', batch: 'BCH-006', quantity: 8, expiry_date: '2026-08-25', alert_days: 14 },
-  { id: '7', name: 'Artemether-Lumefantrine', batch: 'BCH-007', quantity: 35, expiry_date: '2027-05-18', alert_days: 60 },
-  { id: '8', name: 'ORS Sachets', batch: 'BCH-008', quantity: 300, expiry_date: '2028-01-01', alert_days: 90 },
-];
-
-const quickFilters = [
-  { label: 'All', value: 0 },
-  { label: '7 days', value: 7 },
-  { label: '30 days', value: 30 },
-  { label: '90 days', value: 90 },
-  { label: '6 months', value: 180 },
-  { label: '1 year', value: 365 },
-  { label: '2 years', value: 730 },
-];
+import { AlertTriangle, Clock, CheckCircle, Package } from 'lucide-react';
+import { getAllProducts } from '@/lib/offline-db';
+import { seedOfflineData } from '@/lib/seed-data';
+import { useSettingsStore } from '@/lib/settings-store';
+import { formatDate, daysUntilExpiry, formatCurrencyPair } from '@/lib/utils';
+import type { Product } from '@/types/database';
 
 export default function AlertsPage() {
-  const [filterDays, setFilterDays] = useState(0);
+  const settings = useSettingsStore();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filterDays, setFilterDays] = useState<number | null>(null);
+
+  const loadData = useCallback(async () => {
+    await seedOfflineData();
+    const data = await getAllProducts();
+    setProducts(data.filter(p => p.is_active));
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  const getAlertDays = (p: Product) => p.alert_days || settings.expiryCriticalDays;
 
   const expired = products.filter(p => daysUntilExpiry(p.expiry_date) <= 0);
   const critical = products.filter(p => {
-    const days = daysUntilExpiry(p.expiry_date);
-    return days > 0 && days <= p.alert_days;
+    const d = daysUntilExpiry(p.expiry_date);
+    return d > 0 && d <= getAlertDays(p);
   });
   const warning = products.filter(p => {
-    const days = daysUntilExpiry(p.expiry_date);
-    return days > p.alert_days && days <= p.alert_days * 2;
+    const d = daysUntilExpiry(p.expiry_date);
+    return d > getAlertDays(p) && d <= getAlertDays(p) * 3;
   });
 
-  const filtered = filterDays > 0
+  const filtered = filterDays !== null
     ? products.filter(p => daysUntilExpiry(p.expiry_date) <= filterDays && daysUntilExpiry(p.expiry_date) > 0)
-    : products.filter(p => daysUntilExpiry(p.expiry_date) > 0);
+    : [];
 
   return (
     <AuthGuard>
       <AppShell>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2"><Bell className="w-6 h-6 text-accent" /> Expiry Alerts</h1>
-          <p className="text-sm text-muted-foreground">Each product has its own alert threshold — set when adding or editing</p>
+          <h1 className="text-2xl font-bold">Expiry Alerts</h1>
+          <p className="text-sm text-muted-foreground">Track and manage product expiry dates</p>
         </div>
 
-        {/* Summary */}
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-          <Card className="border-red-300 bg-red-50/50"><CardContent>
-            <div className="flex items-center gap-3"><XCircle className="w-8 h-8 text-danger" /><div><p className="text-sm text-danger font-medium">Expired</p><p className="text-2xl font-bold text-danger">{expired.length}</p></div></div>
-          </CardContent></Card>
-          <Card className="border-red-200 bg-red-50/50"><CardContent>
-            <div className="flex items-center gap-3"><AlertTriangle className="w-8 h-8 text-danger" /><div><p className="text-sm text-danger font-medium">Critical</p><p className="text-2xl font-bold text-danger">{critical.length}</p></div></div>
-          </CardContent></Card>
-          <Card className="border-yellow-200 bg-yellow-50/50"><CardContent>
-            <div className="flex items-center gap-3"><AlertTriangle className="w-8 h-8 text-yellow-600" /><div><p className="text-sm text-yellow-700 font-medium">Warning</p><p className="text-2xl font-bold text-yellow-700">{warning.length}</p></div></div>
-          </CardContent></Card>
-          <Card className="border-green-200 bg-green-50/50"><CardContent>
-            <div className="flex items-center gap-3"><CheckCircle className="w-8 h-8 text-success" /><div><p className="text-sm text-success font-medium">Total Tracked</p><p className="text-2xl font-bold text-success">{products.length}</p></div></div>
-          </CardContent></Card>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <Card className="border-red-200 bg-red-50">
+            <CardContent className="p-4 text-center">
+              <AlertTriangle className="w-6 h-6 text-red-500 mx-auto mb-1" />
+              <p className="text-2xl font-bold text-red-600">{expired.length}</p>
+              <p className="text-xs text-red-500">Expired</p>
+            </CardContent>
+          </Card>
+          <Card className="border-orange-200 bg-orange-50">
+            <CardContent className="p-4 text-center">
+              <Clock className="w-6 h-6 text-orange-500 mx-auto mb-1" />
+              <p className="text-2xl font-bold text-orange-600">{critical.length}</p>
+              <p className="text-xs text-orange-500">Critical</p>
+            </CardContent>
+          </Card>
+          <Card className="border-yellow-200 bg-yellow-50">
+            <CardContent className="p-4 text-center">
+              <AlertTriangle className="w-6 h-6 text-yellow-500 mx-auto mb-1" />
+              <p className="text-2xl font-bold text-yellow-600">{warning.length}</p>
+              <p className="text-xs text-yellow-500">Warning</p>
+            </CardContent>
+          </Card>
+          <Card className="border-green-200 bg-green-50">
+            <CardContent className="p-4 text-center">
+              <CheckCircle className="w-6 h-6 text-green-500 mx-auto mb-1" />
+              <p className="text-2xl font-bold text-green-600">{products.length}</p>
+              <p className="text-xs text-green-500">Total Tracked</p>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Quick Filter */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="w-5 h-5 text-primary" />
-              Quick Filter — Show products expiring within
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-2 flex-wrap">
-              {quickFilters.map(f => (
-                <button key={f.value} onClick={() => setFilterDays(f.value)} className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${filterDays === f.value ? 'bg-primary text-white border-primary' : 'bg-white text-muted-foreground border-border hover:border-primary'}`}>
-                  {f.label}
-                </button>
-              ))}
-            </div>
-            {filterDays > 0 && (
-              <p className="mt-3 text-sm text-muted-foreground">
-                {filtered.length} product{filtered.length !== 1 ? 's' : ''} expiring within {filterDays} days
-              </p>
-            )}
-          </CardContent>
-        </Card>
+        <div className="flex gap-2 flex-wrap">
+          {[7, 14, 30, 60, 90, 180, 365].map(d => (
+            <button key={d} onClick={() => setFilterDays(filterDays === d ? null : d)} className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${filterDays === d ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+              {d <= 30 ? `${d} days` : d <= 365 ? `${d / 30} months` : `${d / 365} year`}
+            </button>
+          ))}
+          {filterDays !== null && <button onClick={() => setFilterDays(null)} className="px-3 py-1.5 rounded-full text-xs font-medium bg-red-100 text-red-600 hover:bg-red-200">Clear</button>}
+        </div>
 
-        {/* Filtered Results */}
-        {filterDays > 0 && filtered.length > 0 && (
-          <Card className="border-primary/30">
-            <CardHeader><CardTitle className="text-primary">Products Expiring Within {filterDays} Days</CardTitle></CardHeader>
+        {filterDays !== null && filtered.length > 0 && (
+          <Card>
+            <CardHeader><CardTitle>Expiring within {filterDays} days</CardTitle></CardHeader>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead><tr className="border-b border-border bg-muted/50">
-                  <th className="text-left p-3 font-medium">Product</th><th className="text-left p-3 font-medium">Batch</th><th className="text-right p-3 font-medium">Stock</th><th className="text-left p-3 font-medium">Expiry</th><th className="text-right p-3 font-medium">Days Left</th><th className="text-left p-3 font-medium">Alert Setting</th>
-                </tr></thead>
+                <thead>
+                  <tr className="border-b border-border bg-muted/50">
+                    <th className="text-left p-3 font-medium">Product</th>
+                    <th className="text-left p-3 font-medium">Batch</th>
+                    <th className="text-right p-3 font-medium">Stock</th>
+                    <th className="text-left p-3 font-medium">Expiry</th>
+                    <th className="text-right p-3 font-medium">Days Left</th>
+                  </tr>
+                </thead>
                 <tbody>
-                  {filtered.map(p => {
+                  {filtered.sort((a, b) => daysUntilExpiry(a.expiry_date) - daysUntilExpiry(b.expiry_date)).map(p => {
                     const days = daysUntilExpiry(p.expiry_date);
                     return (
-                      <tr key={p.id} className="border-b border-border hover:bg-muted/30">
+                      <tr key={p.id} className="border-b border-border">
                         <td className="p-3 font-medium">{p.name}</td>
-                        <td className="p-3 font-mono text-xs">{p.batch}</td>
-                        <td className="p-3 text-right">{p.quantity}</td>
+                        <td className="p-3 text-muted-foreground text-xs">{p.batch_number}</td>
+                        <td className="p-3 text-right">{p.quantity_in_stock}</td>
                         <td className="p-3">{formatDate(p.expiry_date)}</td>
-                        <td className="p-3 text-right"><Badge variant={days <= 30 ? 'danger' : 'warning'}>{days} days</Badge></td>
-                        <td className="p-3 text-xs text-muted-foreground">Alert at {p.alert_days} days</td>
+                        <td className="p-3 text-right"><Badge variant={days <= 7 ? 'danger' : days <= 30 ? 'warning' : 'info'}>{days}d</Badge></td>
                       </tr>
                     );
                   })}
@@ -125,19 +126,28 @@ export default function AlertsPage() {
           </Card>
         )}
 
-        {/* Expired */}
         {expired.length > 0 && (
-          <Card className="border-red-300">
-            <CardHeader className="bg-red-50"><CardTitle className="text-danger flex items-center gap-2"><XCircle className="w-5 h-5" /> Expired — Remove Immediately</CardTitle></CardHeader>
+          <Card className="border-red-200">
+            <CardHeader><CardTitle className="text-red-600 flex items-center gap-2"><AlertTriangle className="w-5 h-5" /> Expired ({expired.length})</CardTitle></CardHeader>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead><tr className="border-b border-border bg-muted/50">
-                  <th className="text-left p-3 font-medium">Product</th><th className="text-left p-3 font-medium">Batch</th><th className="text-right p-3 font-medium">Stock</th><th className="text-left p-3 font-medium">Expiry</th><th className="text-right p-3 font-medium">Action</th>
-                </tr></thead>
+                <thead>
+                  <tr className="border-b border-border bg-red-50">
+                    <th className="text-left p-3 font-medium">Product</th>
+                    <th className="text-left p-3 font-medium">Batch</th>
+                    <th className="text-right p-3 font-medium">Stock</th>
+                    <th className="text-left p-3 font-medium">Expired On</th>
+                    <th className="text-right p-3 font-medium">Days Overdue</th>
+                  </tr>
+                </thead>
                 <tbody>
                   {expired.map(p => (
                     <tr key={p.id} className="border-b border-border bg-red-50/50">
-                      <td className="p-3 font-medium">{p.name}</td><td className="p-3 font-mono text-xs">{p.batch}</td><td className="p-3 text-right">{p.quantity}</td><td className="p-3">{formatDate(p.expiry_date)}</td><td className="p-3 text-right"><Button variant="danger" size="sm">Remove</Button></td>
+                      <td className="p-3 font-medium">{p.name}</td>
+                      <td className="p-3 text-muted-foreground text-xs">{p.batch_number}</td>
+                      <td className="p-3 text-right">{p.quantity_in_stock}</td>
+                      <td className="p-3 text-red-600">{formatDate(p.expiry_date)}</td>
+                      <td className="p-3 text-right font-bold text-red-600">{Math.abs(daysUntilExpiry(p.expiry_date))}d</td>
                     </tr>
                   ))}
                 </tbody>
@@ -146,21 +156,32 @@ export default function AlertsPage() {
           </Card>
         )}
 
-        {/* Critical */}
         {critical.length > 0 && (
-          <Card className="border-red-200">
-            <CardHeader className="bg-red-50"><CardTitle className="text-danger flex items-center gap-2"><AlertTriangle className="w-5 h-5" /> Critical — Past Individual Alert Threshold</CardTitle></CardHeader>
+          <Card className="border-orange-200">
+            <CardHeader><CardTitle className="text-orange-600 flex items-center gap-2"><Clock className="w-5 h-5" /> Critical — Past Alert Threshold ({critical.length})</CardTitle></CardHeader>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead><tr className="border-b border-border bg-muted/50">
-                  <th className="text-left p-3 font-medium">Product</th><th className="text-left p-3 font-medium">Batch</th><th className="text-right p-3 font-medium">Stock</th><th className="text-left p-3 font-medium">Expiry</th><th className="text-right p-3 font-medium">Days Left</th><th className="text-left p-3 font-medium">Alert Setting</th><th className="text-right p-3 font-medium">Action</th>
-                </tr></thead>
+                <thead>
+                  <tr className="border-b border-border bg-orange-50">
+                    <th className="text-left p-3 font-medium">Product</th>
+                    <th className="text-left p-3 font-medium">Batch</th>
+                    <th className="text-right p-3 font-medium">Stock</th>
+                    <th className="text-left p-3 font-medium">Expiry</th>
+                    <th className="text-right p-3 font-medium">Days Left</th>
+                    <th className="text-right p-3 font-medium">Alert</th>
+                  </tr>
+                </thead>
                 <tbody>
-                  {critical.map(p => {
+                  {critical.sort((a, b) => daysUntilExpiry(a.expiry_date) - daysUntilExpiry(b.expiry_date)).map(p => {
                     const days = daysUntilExpiry(p.expiry_date);
                     return (
-                      <tr key={p.id} className="border-b border-border bg-red-50/30">
-                        <td className="p-3 font-medium">{p.name}</td><td className="p-3 font-mono text-xs">{p.batch}</td><td className="p-3 text-right">{p.quantity}</td><td className="p-3">{formatDate(p.expiry_date)}</td><td className="p-3 text-right"><Badge variant="danger">{days} days</Badge></td><td className="p-3 text-xs text-muted-foreground">Alert at {p.alert_days} days</td><td className="p-3 text-right"><Button variant="danger" size="sm">Mark for Return</Button></td>
+                      <tr key={p.id} className="border-b border-border bg-orange-50/50">
+                        <td className="p-3 font-medium">{p.name}</td>
+                        <td className="p-3 text-muted-foreground text-xs">{p.batch_number}</td>
+                        <td className="p-3 text-right">{p.quantity_in_stock}</td>
+                        <td className="p-3">{formatDate(p.expiry_date)}</td>
+                        <td className="p-3 text-right"><Badge variant="warning">{days}d</Badge></td>
+                        <td className="p-3 text-right text-xs text-muted-foreground">{getAlertDays(p)}d threshold</td>
                       </tr>
                     );
                   })}
@@ -170,27 +191,46 @@ export default function AlertsPage() {
           </Card>
         )}
 
-        {/* Warning */}
         {warning.length > 0 && (
           <Card className="border-yellow-200">
-            <CardHeader className="bg-yellow-50"><CardTitle className="text-yellow-700 flex items-center gap-2"><AlertTriangle className="w-5 h-5" /> Warning — Approaching Alert Threshold</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-yellow-600 flex items-center gap-2"><AlertTriangle className="w-5 h-5" /> Warning — Approaching Threshold ({warning.length})</CardTitle></CardHeader>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead><tr className="border-b border-border bg-muted/50">
-                  <th className="text-left p-3 font-medium">Product</th><th className="text-left p-3 font-medium">Batch</th><th className="text-right p-3 font-medium">Stock</th><th className="text-left p-3 font-medium">Expiry</th><th className="text-right p-3 font-medium">Days Left</th><th className="text-left p-3 font-medium">Alert Setting</th><th className="text-right p-3 font-medium">Action</th>
-                </tr></thead>
+                <thead>
+                  <tr className="border-b border-border bg-yellow-50">
+                    <th className="text-left p-3 font-medium">Product</th>
+                    <th className="text-left p-3 font-medium">Batch</th>
+                    <th className="text-right p-3 font-medium">Stock</th>
+                    <th className="text-left p-3 font-medium">Expiry</th>
+                    <th className="text-right p-3 font-medium">Days Left</th>
+                  </tr>
+                </thead>
                 <tbody>
-                  {warning.map(p => {
+                  {warning.sort((a, b) => daysUntilExpiry(a.expiry_date) - daysUntilExpiry(b.expiry_date)).map(p => {
                     const days = daysUntilExpiry(p.expiry_date);
                     return (
-                      <tr key={p.id} className="border-b border-border hover:bg-muted/30">
-                        <td className="p-3 font-medium">{p.name}</td><td className="p-3 font-mono text-xs">{p.batch}</td><td className="p-3 text-right">{p.quantity}</td><td className="p-3">{formatDate(p.expiry_date)}</td><td className="p-3 text-right"><Badge variant="warning">{days} days</Badge></td><td className="p-3 text-xs text-muted-foreground">Alert at {p.alert_days} days</td><td className="p-3 text-right"><Button variant="accent" size="sm">Clearance Sale</Button></td>
+                      <tr key={p.id} className="border-b border-border bg-yellow-50/50">
+                        <td className="p-3 font-medium">{p.name}</td>
+                        <td className="p-3 text-muted-foreground text-xs">{p.batch_number}</td>
+                        <td className="p-3 text-right">{p.quantity_in_stock}</td>
+                        <td className="p-3">{formatDate(p.expiry_date)}</td>
+                        <td className="p-3 text-right"><Badge variant="info">{days}d</Badge></td>
                       </tr>
                     );
                   })}
                 </tbody>
               </table>
             </div>
+          </Card>
+        )}
+
+        {expired.length === 0 && critical.length === 0 && warning.length === 0 && !loading && (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <Package className="w-12 h-12 text-green-500 mx-auto mb-3" />
+              <p className="text-lg font-medium text-green-600">All Clear!</p>
+              <p className="text-sm text-muted-foreground">No expiry alerts at this time</p>
+            </CardContent>
           </Card>
         )}
       </div>
