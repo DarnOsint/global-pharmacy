@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useSettingsStore } from '@/lib/settings-store';
 import { useAuthStore } from '@/lib/auth';
-import { Settings, Store, Database, Bell, Shield, Upload, X, Image, User, Save, AlertTriangle, DollarSign } from 'lucide-react';
+import { Settings, Store, Database, Bell, Shield, Upload, X, Image, User, Save, AlertTriangle, DollarSign, Tag, Plus, Trash2 } from 'lucide-react';
 
 export default function SettingsPage() {
   const { user } = useAuthStore();
@@ -20,6 +20,7 @@ export default function SettingsPage() {
   const [address, setAddress] = useState(settings.address);
   const [phone, setPhone] = useState(settings.phone);
   const [email, setEmail] = useState(settings.email);
+  const [newCategory, setNewCategory] = useState('');
   const [licenseNumber, setLicenseNumber] = useState(settings.licenseNumber);
   const [tagline, setTagline] = useState(settings.tagline);
   const [criticalDays, setCriticalDays] = useState(settings.expiryCriticalDays);
@@ -278,6 +279,61 @@ export default function SettingsPage() {
                   </div>
                 ))}
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Product Categories */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Tag className="w-5 h-5 text-primary" />
+                Product Categories
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-xs text-muted-foreground">Manage the categories available when adding or filtering products in inventory.</p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="New category name..."
+                  value={newCategory}
+                  onChange={e => setNewCategory(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && newCategory.trim()) {
+                      settings.addCategory(newCategory.trim());
+                      setNewCategory('');
+                    }
+                  }}
+                  className="flex-1 h-10 rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <Button
+                  onClick={() => {
+                    if (newCategory.trim()) {
+                      settings.addCategory(newCategory.trim());
+                      setNewCategory('');
+                    }
+                  }}
+                  disabled={!newCategory.trim()}
+                >
+                  <Plus className="w-4 h-4 mr-1" /> Add
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {settings.categories.map(cat => (
+                  <span key={cat} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                    {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                    <button
+                      onClick={() => settings.removeCategory(cat)}
+                      className="p-0.5 rounded-full hover:bg-primary/20 transition-colors"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+              {settings.categories.length === 0 && (
+                <p className="text-xs text-muted-foreground italic">No categories. Add one above.</p>
+              )}
             </CardContent>
           </Card>
 

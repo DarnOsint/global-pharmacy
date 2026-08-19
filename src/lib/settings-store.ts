@@ -13,13 +13,28 @@ export interface StoreSettings {
   expiryCriticalDays: number;
   expiryWarningDays: number;
   exchangeRate: number;
+  categories: string[];
 }
 
 interface SettingsStore extends StoreSettings {
   updateSettings: (settings: Partial<StoreSettings>) => void;
   setLogo: (base64: string) => void;
   clearLogo: () => void;
+  addCategory: (name: string) => void;
+  removeCategory: (name: string) => void;
 }
+
+const defaultCategories = [
+  'antibiotics',
+  'analgesics',
+  'vitamins',
+  'diabetes',
+  'cardiovascular',
+  'gastrointestinal',
+  'respiratory',
+  'dermatology',
+  'other',
+];
 
 const defaultSettings: StoreSettings = {
   storeName: 'Global Pharmacy',
@@ -33,6 +48,7 @@ const defaultSettings: StoreSettings = {
   expiryCriticalDays: 30,
   expiryWarningDays: 90,
   exchangeRate: 1550,
+  categories: defaultCategories,
 };
 
 export const useSettingsStore = create<SettingsStore>()(
@@ -43,6 +59,17 @@ export const useSettingsStore = create<SettingsStore>()(
         set((state) => ({ ...state, ...settings })),
       setLogo: (base64) => set({ logoBase64: base64 }),
       clearLogo: () => set({ logoBase64: null }),
+      addCategory: (name) =>
+        set((state) => {
+          const slug = name.toLowerCase().trim();
+          if (!slug || state.categories.includes(slug)) return state;
+          return { ...state, categories: [...state.categories, slug] };
+        }),
+      removeCategory: (name) =>
+        set((state) => ({
+          ...state,
+          categories: state.categories.filter((c) => c !== name),
+        })),
     }),
     {
       name: 'global-pharmacy-settings',

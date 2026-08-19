@@ -20,18 +20,11 @@ import { getAllProducts, addProduct, updateProduct, deleteProduct } from '@/lib/
 import { seedOfflineData } from '@/lib/seed-data';
 import type { Product } from '@/types/database';
 
-const categories = [
-  { value: 'all', label: 'All Categories' },
-  { value: 'antibiotics', label: 'Antibiotics' },
-  { value: 'analgesics', label: 'Analgesics' },
-  { value: 'vitamins', label: 'Vitamins & Supplements' },
-  { value: 'diabetes', label: 'Diabetes' },
-  { value: 'cardiovascular', label: 'Cardiovascular' },
-  { value: 'gastrointestinal', label: 'Gastrointestinal' },
-  { value: 'respiratory', label: 'Respiratory' },
-  { value: 'dermatology', label: 'Dermatology' },
-  { value: 'other', label: 'Other' },
-];
+const defaultCategoryLabels: Record<string, string> = {
+  antibiotics: 'Antibiotics', analgesics: 'Analgesics', vitamins: 'Vitamins & Supplements',
+  diabetes: 'Diabetes', cardiovascular: 'Cardiovascular', gastrointestinal: 'Gastrointestinal',
+  respiratory: 'Respiratory', dermatology: 'Dermatology', other: 'Other',
+};
 
 const currencyOptions = [
   { value: 'SSP', label: 'SSP (South Sudanese Pound)' },
@@ -56,6 +49,11 @@ export default function InventoryPage() {
   const isAdmin = user?.role === 'admin';
   const settings = useSettingsStore();
   const { refreshCount } = useSync();
+
+  const categories = [
+    { value: 'all', label: 'All Categories' },
+    ...settings.categories.map(c => ({ value: c, label: defaultCategoryLabels[c] || c.charAt(0).toUpperCase() + c.slice(1) })),
+  ];
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
