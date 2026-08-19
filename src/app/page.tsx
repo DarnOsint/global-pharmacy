@@ -39,7 +39,8 @@ export default function PinLoginPage() {
               pin: staff.pin,
             };
             login(user);
-            router.push('/dashboard');
+            const roleHome: Record<string, string> = { cashier: '/pos', pharmacist: '/inventory', store_manager: '/inventory', admin: '/dashboard' };
+            router.push(roleHome[user.role] || '/dashboard');
           } else {
             setError('Invalid PIN. Please try again.');
             setPin('');
