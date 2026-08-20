@@ -10,7 +10,7 @@ import { db } from '@/lib/db';
 import {
   LayoutDashboard, Package, ShoppingCart, Receipt,
   CreditCard, Users, BarChart3, AlertTriangle,
-  Settings, X, Pill, LogOut, ScanLine
+  Settings, X, Pill, LogOut, ScanLine, Truck, UserCheck, FileText
 } from 'lucide-react';
 
 import { useSettingsStore } from '@/lib/settings-store';
@@ -28,7 +28,10 @@ const navItems: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin'] },
   { href: '/inventory', label: 'Inventory', icon: Package, roles: ['pharmacist', 'store_manager', 'admin'] },
   { href: '/sales', label: 'Sales', icon: ShoppingCart, roles: ['admin'] },
+  { href: '/invoices', label: 'Invoices', icon: FileText, roles: ['admin'] },
   { href: '/purchases', label: 'Purchases', icon: Receipt, roles: ['pharmacist', 'store_manager', 'admin'] },
+  { href: '/suppliers', label: 'Suppliers', icon: Truck, roles: ['pharmacist', 'store_manager', 'admin'] },
+  { href: '/customers', label: 'Customers', icon: UserCheck, roles: ['admin'] },
   { href: '/expenses', label: 'Expenses', icon: CreditCard, roles: ['admin'] },
   { href: '/hr', label: 'HR & Payroll', icon: Users, roles: ['admin'] },
   { href: '/alerts', label: 'Expiry Alerts', icon: AlertTriangle, roles: ['pharmacist', 'store_manager', 'admin'], hasAlert: true },

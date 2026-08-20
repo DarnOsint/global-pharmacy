@@ -10,7 +10,8 @@ import { Select } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Modal } from '@/components/ui/modal';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Package, Plus, Search, Edit2, Trash2, Eye, Upload, Download } from 'lucide-react';
+import { Package, Plus, Search, Edit2, Trash2, Eye, Upload, Download, ScanLine } from 'lucide-react';
+import { BarcodeScanner } from '@/components/ui/barcode-scanner';
 import * as XLSX from 'xlsx';
 import { formatCurrency, formatDate, daysUntilExpiry, getExpiryStatus, formatCurrencyPair, type Currency } from '@/lib/utils';
 import { useAuthStore } from '@/lib/auth';
@@ -69,6 +70,7 @@ export default function InventoryPage() {
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<{ success: number; errors: string[] } | null>(null);
+  const [showScanner, setShowScanner] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadProducts = useCallback(async () => {
@@ -83,7 +85,8 @@ export default function InventoryPage() {
   const filtered = products.filter((p) => {
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
       p.sku.toLowerCase().includes(search.toLowerCase()) ||
-      p.generic_name.toLowerCase().includes(search.toLowerCase());
+      p.generic_name.toLowerCase().includes(search.toLowerCase()) ||
+      (p.barcode && p.barcode.toLowerCase().includes(search.toLowerCase()));
     const matchCategory = category === 'all' || p.category === category;
     return matchSearch && matchCategory;
   });
@@ -250,8 +253,9 @@ export default function InventoryPage() {
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input type="text" placeholder="Search by name, SKU, or generic name..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+            <input type="text" placeholder="Search by name, SKU, barcode, or generic name..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
           </div>
+          <Button variant="outline" onClick={() => setShowScanner(true)} className="shrink-0"><ScanLine className="w-4 h-4 mr-2" /> Scan</Button>
           <Select options={categories} value={category} onChange={(e) => setCategory(e.target.value)} className="w-full sm:w-48" />
         </div>
 
@@ -389,6 +393,7 @@ export default function InventoryPage() {
               <Input label="Reorder Level" id="ereorder" type="number" value={editProduct.reorder_level || 0} onChange={e => setEditProduct({ ...editProduct, reorder_level: Number(e.target.value) })} required />
               <Input label="Expiry Date" id="eexpiry" type="date" value={editProduct.expiry_date || ''} onChange={e => setEditProduct({ ...editProduct, expiry_date: e.target.value })} required />
               <Input label="Batch Number" id="ebatch" value={editProduct.batch_number || ''} onChange={e => setEditProduct({ ...editProduct, batch_number: e.target.value })} required />
+              <Input label="Barcode" id="ebarcode" value={editProduct.barcode || ''} onChange={e => setEditProduct({ ...editProduct, barcode: e.target.value || null })} placeholder="Optional barcode" />
               <Select label="Alert Before Expiry" id="ealert_days" options={alertDaysOptions} value={String(editProduct.alert_days || 30)} onChange={e => setEditProduct({ ...editProduct, alert_days: Number(e.target.value) })} />
             </div>
             <div className="flex justify-end gap-3">
@@ -423,6 +428,12 @@ export default function InventoryPage() {
             </div>
           )}
         </Modal>
+
+        <BarcodeScanner
+          isOpen={showScanner}
+          onClose={() => setShowScanner(false)}
+          onScan={(barcode) => setSearch(barcode)}
+        />
       </div>
     </AppShell>
     </AuthGuard>

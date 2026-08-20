@@ -1,8 +1,43 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { getPendingCount, getPendingMutations, markSynced, clearSynced } from '@/lib/sync';
+import { getPendingCount, getPendingMutations, markSynced, clearSynced, type PendingMutation } from '@/lib/sync';
 import { useAppStore } from '@/lib/store';
+import { supabase } from '@/lib/supabase';
+
+async function syncMutationToSupabase(mutation: PendingMutation): Promise<boolean> {
+  try {
+    const { table, operation, data } = mutation;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const fromTable = supabase.from(table as any);
+
+    switch (operation) {
+      case 'create': {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (fromTable as any).upsert(data, { onConflict: 'id' });
+        return !error;
+      }
+      case 'update': {
+        const d = data as Record<string, unknown>;
+        const id = d.id;
+        const { id: _, ...updates } = d;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (fromTable as any).update(updates).eq('id', id);
+        return !error;
+      }
+      case 'delete': {
+        const d = data as Record<string, unknown>;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (fromTable as any).delete().eq('id', d.id);
+        return !error;
+      }
+      default:
+        return false;
+    }
+  } catch {
+    return false;
+  }
+}
 
 export function useSync() {
   const [pendingCount, setPendingCount] = useState(0);
@@ -22,24 +57,10 @@ export function useSync() {
       const mutations = await getPendingMutations();
       if (mutations.length === 0) { setSyncing(false); return; }
 
-      // Group by table for batch processing
-      const grouped = mutations.reduce((acc, m) => {
-        if (!acc[m.table]) acc[m.table] = [];
-        acc[m.table].push(m);
-        return acc;
-      }, {} as Record<string, typeof mutations>);
-
-      // Attempt sync for each mutation
       const syncedIds: number[] = [];
       for (const mutation of mutations) {
-        try {
-          // In a real app, this would call the Supabase API
-          // For now we mark as synced since Supabase is the source of truth
-          // and we're using mock data
-          syncedIds.push(mutation.id!);
-        } catch {
-          // If sync fails, skip this mutation
-        }
+        const success = await syncMutationToSupabase(mutation);
+        if (success) syncedIds.push(mutation.id!);
       }
 
       if (syncedIds.length > 0) {
@@ -62,7 +83,6 @@ export function useSync() {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Check for pending mutations every 30s
     const interval = setInterval(refreshCount, 30000);
 
     return () => {
