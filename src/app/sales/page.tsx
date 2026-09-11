@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Modal } from '@/components/ui/modal';
 import { EmptyState } from '@/components/ui/empty-state';
-import { ShoppingCart, Plus, Search, Edit2, Eye, Trash2 } from 'lucide-react';
+import { ShoppingCart, Plus, Search, Edit2, Eye, Trash2, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { formatCurrency, formatDate, formatCurrencyPair, type Currency } from '@/lib/utils';
 import { useAuthStore } from '@/lib/auth';
 import { useSettingsStore } from '@/lib/settings-store';
@@ -16,6 +16,22 @@ import { useSync } from '@/lib/use-sync';
 import { getAllSales, addSale, updateSale, deleteSale } from '@/lib/offline-db';
 import { seedOfflineData } from '@/lib/seed-data';
 import type { Sale } from '@/types/database';
+
+const PAGE_SIZE = 20;
+
+function toDateKey(iso: string): string {
+  const d = new Date(iso);
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
+function todayKey(): string {
+  const d = new Date();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
 
 const paymentMethods = [
   { value: 'cash', label: 'Cash' }, { value: 'card', label: 'Card' },
@@ -44,6 +60,8 @@ export default function SalesPage() {
   const [editSale, setEditSale] = useState<Partial<Sale>>({});
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(todayKey());
+  const [page, setPage] = useState(1);
   const [addCurrency, setAddCurrency] = useState<Currency>('SSP');
   const [addSubtotal, setAddSubtotal] = useState(0);
   const [addDiscount, setAddDiscount] = useState(0);
@@ -68,10 +86,28 @@ export default function SalesPage() {
     loadSales();
   }, [loadSales]);
 
-  const filtered = sales.filter(s =>
-    s.invoice_number.toLowerCase().includes(search.toLowerCase()) ||
-    s.notes?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = sales.filter(s => {
+    if (toDateKey(s.created_at) !== selectedDate) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      return (
+        s.invoice_number.toLowerCase().includes(q) ||
+        s.notes?.toLowerCase().includes(q) ||
+        s.payment_method.toLowerCase().includes(q)
+      );
+    }
+    return true;
+  }).sort((a, b) => b.created_at.localeCompare(a.created_at));
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paged = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  const daySSP = filtered.reduce((s, x) => s + ((x.currency || 'SSP') === 'SSP' ? x.total : 0), 0);
+  const dayUSD = filtered.reduce((s, x) => s + (x.currency === 'USD' ? x.total : 0), 0);
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { setPage(1); }, [selectedDate, search]);
 
   const openEdit = (sale: Sale) => { setEditSale({ ...sale }); setShowEdit(true); };
 
@@ -128,11 +164,36 @@ export default function SalesPage() {
         </div>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Sales Records</CardTitle>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input type="text" placeholder="Search invoice or customer..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10 pr-4 py-2 rounded-lg border border-border text-sm w-64 focus:outline-none focus:ring-2 focus:ring-primary" />
+          <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <CardTitle>Sales Records</CardTitle>
+              <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-1.5">
+                <Calendar className="w-4 h-4 text-muted-foreground" />
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="bg-transparent text-sm font-medium focus:outline-none"
+                />
+                {selectedDate !== todayKey() && (
+                  <button onClick={() => setSelectedDate(todayKey())} className="text-xs text-primary font-medium hover:underline ml-1">Today</button>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+              <span className="font-medium">{filtered.length} sale{filtered.length !== 1 ? 's' : ''}</span>
+              {daySSP > 0 && <span>SSP {daySSP.toLocaleString()}</span>}
+              {dayUSD > 0 && <span>USD {dayUSD.toLocaleString()}</span>}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Search invoice or customer..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-10 pr-4 py-1.5 rounded-lg border border-border text-sm w-56 focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
             </div>
           </CardHeader>
           <div className="overflow-x-auto">
@@ -144,19 +205,19 @@ export default function SalesPage() {
                   <th className="text-right p-3 font-medium">Total</th>
                   <th className="text-left p-3 font-medium">Payment</th>
                   <th className="text-left p-3 font-medium">Status</th>
-                  <th className="text-left p-3 font-medium">Date</th>
+                  <th className="text-left p-3 font-medium">Time</th>
                   <th className="text-right p-3 font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((sale) => (
+                {paged.map((sale) => (
                   <tr key={sale.id} className="border-b border-border hover:bg-muted/30">
                     <td className="p-3 font-mono text-xs font-medium">{sale.invoice_number}</td>
                     <td className="p-3 font-medium">{sale.notes || 'Walk-in'}</td>
                     <td className="p-3 text-right font-semibold">{formatCurrencyPair(sale.total, sale.currency || 'SSP', settings.exchangeRate)}</td>
                     <td className="p-3"><Badge variant="default">{sale.payment_method}</Badge></td>
                     <td className="p-3"><Badge variant={sale.status === 'completed' ? 'success' : sale.status === 'returned' ? 'danger' : 'warning'}>{sale.status}</Badge></td>
-                    <td className="p-3 text-muted-foreground">{formatDate(sale.created_at)}</td>
+                    <td className="p-3 text-muted-foreground">{new Date(sale.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
                     <td className="p-3 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <button onClick={() => { setSelected(sale); setShowDetail(true); }} className="p-1.5 rounded hover:bg-muted"><Eye className="w-4 h-4" /></button>
@@ -172,6 +233,22 @@ export default function SalesPage() {
               </tbody>
             </table>
           </div>
+          {filtered.length > PAGE_SIZE && (
+            <div className="flex items-center justify-between border-t border-border px-4 py-3 text-sm">
+              <span className="text-muted-foreground">
+                Showing {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)} of {filtered.length}
+              </span>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" disabled={safePage <= 1} onClick={() => setPage(safePage - 1)}>
+                  <ChevronLeft className="w-4 h-4 mr-1" /> Prev
+                </Button>
+                <span className="text-xs text-muted-foreground px-2">Page {safePage} of {totalPages}</span>
+                <Button variant="ghost" size="sm" disabled={safePage >= totalPages} onClick={() => setPage(safePage + 1)}>
+                  Next <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
+            </div>
+          )}
         </Card>
 
         {/* Add Modal */}
