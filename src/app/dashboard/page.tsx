@@ -542,7 +542,7 @@ export default function DashboardPage() {
                               {product.name}
                             </span>
                             <span className="text-xs text-muted-foreground font-mono">
-                              SKU: {product.sku}
+                              Serial Number: {product.sku}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">

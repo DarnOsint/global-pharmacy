@@ -110,7 +110,7 @@ export default function SettingsPage() {
     ]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(products.map(p => ({
-      Name: p.name, SKU: p.sku, Category: p.category, Stock: p.quantity_in_stock,
+      Name: p.name, 'Serial Number': p.sku, Category: p.category, Stock: p.quantity_in_stock,
       'Unit Price': p.unit_price, 'Cost Price': p.cost_price, Currency: p.currency,
       Expiry: p.expiry_date, Manufacturer: p.manufacturer,
     }))), 'Inventory');

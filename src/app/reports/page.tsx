@@ -90,7 +90,7 @@ export default function ReportsPage() {
   const exportInventory = () => {
     const data = products.map(p => ({
       Name: p.name,
-      SKU: p.sku,
+      'Serial Number': p.sku,
       Category: p.category,
       Stock: p.quantity_in_stock,
       'Unit Price': p.unit_price,
@@ -109,7 +109,7 @@ export default function ReportsPage() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sales.map(s => ({ Invoice: s.invoice_number, Date: s.created_at.slice(0,10), Total: s.total, Currency: s.currency, Payment: s.payment_method, Status: s.status }))), 'Sales');
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(expenses.map(e => ({ Date: e.date, Category: e.category, Description: e.description, Amount: e.amount, Currency: e.currency }))), 'Expenses');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(products.map(p => ({ Name: p.name, SKU: p.sku, Stock: p.quantity_in_stock, Price: p.unit_price, Currency: p.currency, Expiry: p.expiry_date }))), 'Inventory');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(products.map(p => ({ Name: p.name, 'Serial Number': p.sku, Stock: p.quantity_in_stock, Price: p.unit_price, Currency: p.currency, Expiry: p.expiry_date }))), 'Inventory');
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(purchases.map(p => ({ Invoice: p.invoice_number, Date: p.created_at.slice(0,10), Total: p.total, Currency: p.currency, Status: p.status }))), 'Purchases');
     XLSX.writeFile(wb, `global-pharmacy-full-report-${today}.xlsx`);
   };
