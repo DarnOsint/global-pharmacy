@@ -132,14 +132,28 @@ export default function PinLoginPage() {
         <div className="bg-gradient-to-b from-[#123a72] via-[#0e2a57] to-[#0a1120] border border-white/10 rounded-3xl p-8 shadow-[0_20px_60px_rgba(10,17,32,0.45)] cv-fade-up" style={{ animationDelay: '0.08s' }}>
           {/* Store logo — transparent logo inside a hollow rotating ring */}
           <div className="relative mx-auto w-28 h-28 mb-6">
-            <div
-              className="absolute inset-0 rounded-full cv-spin-slow"
-              style={{
-                background: 'conic-gradient(from 0deg, #f97316, #2f6fd6, #22b7ef, #2f6fd6, #f97316)',
-                mask: 'radial-gradient(farthest-side, transparent calc(100% - 7px), black calc(100% - 6px))',
-                WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 7px), black calc(100% - 6px))',
-              }}
-            />
+            <svg
+              className="absolute inset-0 w-full h-full cv-spin-slow"
+              viewBox="0 0 120 120"
+              aria-hidden="true"
+            >
+              <defs>
+                <linearGradient id="login-ring-grad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#f97316" />
+                  <stop offset="35%" stopColor="#2f6fd6" />
+                  <stop offset="70%" stopColor="#22b7ef" />
+                  <stop offset="100%" stopColor="#f97316" />
+                </linearGradient>
+              </defs>
+              <circle
+                cx="60"
+                cy="60"
+                r="54"
+                fill="none"
+                stroke="url(#login-ring-grad)"
+                strokeWidth="8"
+              />
+            </svg>
             <div className="absolute inset-0 flex items-center justify-center">
               {settings.logoBase64 ? (
                 <img src={settings.logoBase64} alt="Store logo" className="w-20 h-20 object-contain drop-shadow-lg" />

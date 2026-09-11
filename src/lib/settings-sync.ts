@@ -77,7 +77,10 @@ export async function syncSettings(): Promise<string | null> {
 
     if (data) {
       const remoteTs = new Date(data.updated_at).getTime();
-      if (remoteTs > lastSynced) {
+      // Compare against the local settings version (not the lastSynced marker)
+      // so devices with a stuck marker or clock skew still receive updates.
+      const latestLocal = useSettingsStore.getState().updatedAt || 0;
+      if (remoteTs > latestLocal) {
         const remote = (data.value || {}) as Record<string, unknown>;
         const patch: Partial<StoreSettings> = {};
         for (const field of SYNC_FIELDS) {
