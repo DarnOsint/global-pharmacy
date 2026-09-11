@@ -151,7 +151,8 @@ export default function InvoicesPage() {
               <div className="center bold" style={{fontSize:16}}>GLOBAL PHARMACY</div>
               <div className="center" style={{fontSize:10}}>{settings.storeName || 'Global Pharmacy'}</div>
               <div className="center" style={{fontSize:10}}>{settings.address || 'Juba, South Sudan'}</div>
-              <div className="center" style={{fontSize:10}}>Tel: {settings.phone || '+211920123456'}</div>
+              <div className="center" style={{fontSize:10}}>Tel: {settings.phone || '+211929420661'}</div>
+              {settings.secondaryPhone && <div className="center" style={{fontSize:10}}>Tel: {settings.secondaryPhone}</div>}
               <div className="line" />
               <div className="center bold" style={{fontSize:13}}>INVOICE</div>
               <div style={{fontSize:10}}>Invoice: {viewing.invoice_number}</div>
@@ -185,7 +186,8 @@ export default function InvoicesPage() {
               <div className="text-center mb-2">
                 <p className="font-bold text-sm">GLOBAL PHARMACY</p>
                 <p className="text-xs text-muted-foreground">{settings.address || 'Juba, South Sudan'}</p>
-                <p className="text-xs text-muted-foreground">Tel: {settings.phone || '+211920123456'}</p>
+                <p className="text-xs text-muted-foreground">Tel: {settings.phone || '+211929420661'}</p>
+                {settings.secondaryPhone && <p className="text-xs text-muted-foreground">Tel: {settings.secondaryPhone}</p>}
               </div>
               <div className="border-t border-dashed border-border my-2" />
               <p className="text-center font-bold text-sm mb-2">INVOICE</p>

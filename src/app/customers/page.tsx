@@ -140,7 +140,7 @@ export default function CustomersPage() {
           </div>
           <div>
             <label className="text-sm font-medium">Phone *</label>
-            <Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="+211920123456" />
+            <Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="+211929420661" />
           </div>
           <div>
             <label className="text-sm font-medium">Email</label>

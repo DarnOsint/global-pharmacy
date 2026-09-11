@@ -6,6 +6,7 @@ export interface StoreSettings {
   storeName: string;
   address: string;
   phone: string;
+  secondaryPhone: string;
   email: string;
   licenseNumber: string;
   logoBase64: string | null;
@@ -41,7 +42,8 @@ const defaultCategories = [
 const defaultSettings: StoreSettings = {
   storeName: 'Global Pharmacy',
   address: 'Juba, South Sudan',
-  phone: '+211920123456',
+  phone: '+211929420661',
+  secondaryPhone: '+211922770757',
   email: 'info@globalpharmacy.ss',
   licenseNumber: 'SSPHA/GP/2024/001',
   logoBase64: null,

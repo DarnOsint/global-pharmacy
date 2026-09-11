@@ -23,6 +23,7 @@ export default function SettingsPage() {
   const [storeName, setStoreName] = useState(settings.storeName);
   const [address, setAddress] = useState(settings.address);
   const [phone, setPhone] = useState(settings.phone);
+  const [secondaryPhone, setSecondaryPhone] = useState(settings.secondaryPhone);
   const [email, setEmail] = useState(settings.email);
   const [newCategory, setNewCategory] = useState('');
   const [licenseNumber, setLicenseNumber] = useState(settings.licenseNumber);
@@ -83,7 +84,7 @@ export default function SettingsPage() {
 
   const handleSave = () => {
     settings.updateSettings({
-      storeName, address, phone, email, licenseNumber, tagline,
+      storeName, address, phone, secondaryPhone, email, licenseNumber, tagline,
       expiryCriticalDays: criticalDays, expiryWarningDays: warningDays,
       exchangeRate,
     });
@@ -230,6 +231,7 @@ export default function SettingsPage() {
                   <Input label="Tagline" id="tagline" value={tagline} onChange={e => setTagline(e.target.value)} />
                   <Input label="Address" id="address" value={address} onChange={e => setAddress(e.target.value)} />
                   <Input label="Phone" id="phone" value={phone} onChange={e => setPhone(e.target.value)} />
+                  <Input label="Secondary Phone" id="secondary_phone" value={secondaryPhone} onChange={e => setSecondaryPhone(e.target.value)} />
                   <Input label="Email" id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} />
                   <Input label="License Number" id="license" value={licenseNumber} onChange={e => setLicenseNumber(e.target.value)} />
                 </div>

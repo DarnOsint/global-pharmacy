@@ -13,6 +13,7 @@ const SYNC_FIELDS: (keyof SyncableSettings)[] = [
   'storeName',
   'address',
   'phone',
+  'secondaryPhone',
   'email',
   'licenseNumber',
   'tagline',

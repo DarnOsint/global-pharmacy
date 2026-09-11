@@ -159,6 +159,7 @@ export default function POSPage() {
     const storeName = settings.storeName || 'Global Pharmacy';
     const addr = settings.address || 'Juba, South Sudan';
     const phone = settings.phone || '';
+    const secondaryPhone = settings.secondaryPhone || '';
     const license = settings.licenseNumber || '';
     const dateStr = new Date(completedSale.sale.created_at).toLocaleDateString('en-SS');
     const timeStr = new Date(completedSale.sale.created_at).toLocaleTimeString('en-SS');
@@ -185,6 +186,7 @@ export default function POSPage() {
     receipt += center(storeName.toUpperCase(), W) + '\n';
     receipt += center(addr, W) + '\n';
     if (phone) receipt += center(`Tel: ${phone}`, W) + '\n';
+    if (secondaryPhone) receipt += center(`Tel: ${secondaryPhone}`, W) + '\n';
     if (license) receipt += center(`Lic: ${license}`, W) + '\n';
     receipt += '\n';
     receipt += dhr + '\n';
@@ -584,6 +586,7 @@ ${settings.logoBase64 ? `<div class="logo"><img src="${settings.logoBase64}" /><
                     <div className="font-bold text-base">{settings.storeName || 'Global Pharmacy'}</div>
                     <div className="text-gray-500 text-[10px]">{settings.address || 'Juba, South Sudan'}</div>
                     {settings.phone && <div className="text-gray-500 text-[10px]">Tel: {settings.phone}</div>}
+                    {settings.secondaryPhone && <div className="text-gray-500 text-[10px]">Tel: {settings.secondaryPhone}</div>}
                     {settings.licenseNumber && <div className="text-gray-500 text-[10px]">License: {settings.licenseNumber}</div>}
                   </div>
                   <div className="border-t border-dashed border-gray-300 my-3" />

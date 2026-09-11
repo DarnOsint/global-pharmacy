@@ -28,7 +28,7 @@ export class AuthDB extends Dexie {
 export const authDb = new AuthDB();
 
 export const defaultStaffPins: StaffPin[] = [
-  { id: '1', staff_id: 'a0000000-0000-0000-0000-000000000001', first_name: 'Clara', last_name: 'Evelino Modi', role: 'admin', pin: '1234', username: 'clara', password: 'admin123' },
+  { id: '1', staff_id: 'a0000000-0000-0000-0000-000000000001', first_name: 'Clara', last_name: 'Evelino Modi', role: 'admin', pin: '0887', username: 'clara', password: 'admin123' },
   { id: '2', staff_id: 'a0000000-0000-0000-0000-000000000002', first_name: 'Nyamal', last_name: 'Kuol', role: 'pharmacist', pin: '5678' },
   { id: '3', staff_id: 'a0000000-0000-0000-0000-000000000003', first_name: 'Bol', last_name: 'Mawut', role: 'pharmacist', pin: '3456' },
   { id: '4', staff_id: 'a0000000-0000-0000-0000-000000000004', first_name: 'Akello', last_name: 'James', role: 'cashier', pin: '7890' },
@@ -53,6 +53,11 @@ export async function seedAuthDb() {
         const def = defaultStaffPins.find((s) => s.role === 'admin');
         updates.username = admin.username || def?.username || 'clara';
         updates.password = admin.password || def?.password || 'admin123';
+      }
+      // Keep the admin PIN in sync with the configured default
+      const def = defaultStaffPins.find((s) => s.role === 'admin');
+      if (admin.pin !== (def?.pin || '0887')) {
+        updates.pin = def?.pin || '0887';
       }
       if (Object.keys(updates).length > 0) {
         await authDb.staffPins.update(admin.id, updates);
