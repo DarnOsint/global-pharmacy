@@ -82,9 +82,9 @@ export async function getAdminCredentials(): Promise<{ username: string } | null
 
 export async function setAdminCredentials(username: string, password: string): Promise<boolean> {
   const clean = username.trim().toLowerCase();
-  if (!clean || !password) return false;
+  if (!clean) return false;
   const admin = await authDb.staffPins.where('role').equals('admin').first();
   if (!admin) return false;
-  await authDb.staffPins.update(admin.id, { username: clean, password });
+  await authDb.staffPins.update(admin.id, { username: clean, ...(password ? { password } : {}) });
   return true;
 }

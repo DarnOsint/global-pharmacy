@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { AuthGuard } from '@/components/auth-guard';
 import { AppShell } from '@/components/layout/app-shell';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -12,6 +12,7 @@ import { Settings, Store, Bell, Shield, Upload, X, Image, User, Save, AlertTrian
 import * as XLSX from 'xlsx';
 import { getAllProducts, getAllSales, getAllExpenses, getAllPurchases, getAllStaff } from '@/lib/offline-db';
 import { CybervilleCredit } from '@/components/cyberville-brand';
+import { getAdminCredentials, setAdminCredentials } from '@/lib/auth-db';
 
 export default function SettingsPage() {
   const { user } = useAuthStore();
@@ -30,6 +31,15 @@ export default function SettingsPage() {
   const [warningDays, setWarningDays] = useState(settings.expiryWarningDays);
   const [exchangeRate, setExchangeRate] = useState(settings.exchangeRate);
   const [saved, setSaved] = useState(false);
+  const [adminUsername, setAdminUsername] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [adminSaved, setAdminSaved] = useState(false);
+
+  useEffect(() => {
+    getAdminCredentials().then((creds) => {
+      setAdminUsername(creds?.username || '');
+    });
+  }, []);
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -64,6 +74,17 @@ export default function SettingsPage() {
   };
 
   const exportFileRef = useRef<HTMLInputElement>(null);
+
+  const handleSaveAdminCredentials = async () => {
+    const ok = await setAdminCredentials(adminUsername, adminPassword);
+    if (ok) {
+      setAdminPassword('');
+      setAdminSaved(true);
+      setTimeout(() => setAdminSaved(false), 2000);
+    } else {
+      alert('Could not save credentials. Make sure the username is not empty.');
+    }
+  };
 
   const handleExportAll = async () => {
     const [products, sales, expenses, purchases, staff] = await Promise.all([
@@ -425,6 +446,38 @@ export default function SettingsPage() {
                     <div className="w-5 h-5 bg-white rounded-full absolute right-0.5 top-0.5 shadow" />
                   </div>
                 </div>
+
+                {isAdmin && (
+                  <div className="p-4 rounded-lg border border-border space-y-3">
+                    <p className="text-sm font-medium">Admin login credentials</p>
+                    <p className="text-xs text-muted-foreground">
+                      Used to sign in with &quot;Username &amp; Password&quot; on the login screen. Stored only on this device.
+                    </p>
+                    <div>
+                      <label className="block text-xs mb-1">Username</label>
+                      <Input
+                        value={adminUsername}
+                        onChange={(e) => setAdminUsername(e.target.value)}
+                        placeholder="clara"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs mb-1">Password</label>
+                      <Input
+                        type="password"
+                        value={adminPassword}
+                        onChange={(e) => setAdminPassword(e.target.value)}
+                        placeholder="Leave blank to keep current password"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" onClick={handleSaveAdminCredentials}>
+                        <Save className="w-4 h-4 mr-1" /> Save
+                      </Button>
+                      {adminSaved && <span className="text-xs text-success">Saved</span>}
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

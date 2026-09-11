@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Pill, Delete, Loader2, AlertCircle } from 'lucide-react';
 import { useAuthStore, type AuthUser } from '@/lib/auth';
-import { seedAuthDb, verifyPinOffline } from '@/lib/auth-db';
+import { seedAuthDb, verifyPinOffline, verifyCredentials } from '@/lib/auth-db';
 import { useSettingsStore } from '@/lib/settings-store';
 import { CybervilleCredit } from '@/components/cyberville-brand';
 
@@ -16,6 +16,9 @@ export default function PinLoginPage() {
   const [errorNonce, setErrorNonce] = useState(0);
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
+  const [mode, setMode] = useState<'pin' | 'password'>('pin');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const { login, isAuthenticated, user, hasHydrated } = useAuthStore();
 
   useEffect(() => {
@@ -70,15 +73,39 @@ export default function PinLoginPage() {
     setError('');
   }, []);
 
+  const handlePasswordLogin = useCallback(async () => {
+    if (!username.trim() || !password) return;
+    setError('');
+    setLoading(true);
+    const staff = await verifyCredentials(username, password);
+    if (staff) {
+      const user: AuthUser = {
+        id: staff.id,
+        first_name: staff.first_name,
+        last_name: staff.last_name,
+        role: staff.role,
+        pin: staff.pin,
+      };
+      login(user);
+      const roleHome: Record<string, string> = { pharmacist: '/pos', cashier: '/inventory', store_manager: '/inventory', admin: '/dashboard' };
+      router.push(roleHome[user.role] || '/dashboard');
+    } else {
+      setError('Invalid username or password.');
+      setPassword('');
+    }
+    setLoading(false);
+  }, [username, password, login, router]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (mode !== 'pin') return;
       if (e.key >= '0' && e.key <= '9') handleDigit(e.key);
       else if (e.key === 'Backspace') handleDelete();
       else if (e.key === 'Escape') handleClear();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleDigit, handleDelete, handleClear]);
+  }, [handleDigit, handleDelete, handleClear, mode]);
 
   const digits = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'];
 
@@ -145,73 +172,152 @@ export default function PinLoginPage() {
             </div>
           </div>
 
-          <div className="text-center mb-7">
+          <div className="text-center mb-5">
             <p className="text-white/60 text-sm">
-              {loading ? 'Verifying your PIN...' : 'Enter your 4-digit PIN to sign in'}
+              {loading
+                ? 'Verifying...'
+                : mode === 'pin'
+                  ? 'Enter your 4-digit PIN to sign in'
+                  : 'Sign in with the admin username & password'}
             </p>
           </div>
 
-          {/* PIN dots */}
-          <div
-            key={errorNonce}
-            className={`flex justify-center gap-4 mb-6 ${errorNonce > 0 ? 'cv-shake' : ''}`}
-          >
-            {[0, 1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className={`h-4 w-4 rounded-full transition-all duration-300 ${
-                  i < pin.length
-                    ? 'cv-pop bg-[linear-gradient(135deg,#f97316,#fb923c)] shadow-[0_0_14px_rgba(249,115,22,0.55)]'
-                    : 'border-2 border-white/20 bg-white/5'
-                }`}
-              />
-            ))}
+          {/* Login mode toggle */}
+          <div className="flex p-1 rounded-xl bg-white/10 border border-white/10 mb-6">
+            <button
+              onClick={() => { setMode('pin'); setError(''); setPin(''); }}
+              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+                mode === 'pin' ? 'bg-white text-[#0c1322] shadow' : 'text-white/60 hover:text-white'
+              }`}
+            >
+              PIN
+            </button>
+            <button
+              onClick={() => { setMode('password'); setError(''); }}
+              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+                mode === 'password' ? 'bg-white text-[#0c1322] shadow' : 'text-white/60 hover:text-white'
+              }`}
+            >
+              Username & Password
+            </button>
           </div>
 
-          {/* Error message */}
-          {error && (
-            <div className="flex items-center justify-center gap-2 mb-5 text-sm text-red-400 cv-pop">
+          {mode === 'pin' ? (
+            <>
+              {/* PIN dots */}
+              <div
+                key={errorNonce}
+                className={`flex justify-center gap-4 mb-6 ${errorNonce > 0 ? 'cv-shake' : ''}`}
+              >
+                {[0, 1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className={`h-4 w-4 rounded-full transition-all duration-300 ${
+                      i < pin.length
+                        ? 'cv-pop bg-[linear-gradient(135deg,#f97316,#fb923c)] shadow-[0_0_14px_rgba(249,115,22,0.55)]'
+                        : 'border-2 border-white/20 bg-white/5'
+                    }`}
+                  />
+                ))}
+              </div>
+
+              {/* Loading */}
+              {loading && (
+                <div className="flex items-center justify-center gap-2 mb-5 text-sm text-[#fb923c]">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Verifying…
+                </div>
+              )}
+
+              {/* Keypad */}
+              <div className="grid grid-cols-3 gap-3">
+                {digits.map((d, i) => {
+                  if (d === '') return <div key={i} />;
+                  if (d === 'del') {
+                    return (
+                      <button
+                        key={i}
+                        onClick={handleDelete}
+                        disabled={loading}
+                        className="h-16 rounded-2xl bg-[linear-gradient(135deg,#f97316,#ea580c)] text-white flex items-center justify-center transition-all active:scale-90 disabled:opacity-40 hover:brightness-110"
+                      >
+                        <Delete className="w-6 h-6" />
+                      </button>
+                    );
+                  }
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => handleDigit(d)}
+                      disabled={loading || pin.length >= 4}
+                      className="h-16 rounded-2xl bg-[linear-gradient(135deg,#f97316,#ea580c)] text-white text-2xl font-semibold flex items-center justify-center transition-all active:scale-90 disabled:opacity-40 hover:brightness-110 shadow-[0_6px_18px_rgba(249,115,22,0.35)]"
+                    >
+                      {d}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Username & Password form */}
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label className="block text-white/60 text-xs mb-1.5">Username</label>
+                  <input
+                    value={username}
+                    onChange={(e) => { setUsername(e.target.value); setError(''); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handlePasswordLogin(); }}
+                    autoComplete="username"
+                    placeholder="clara"
+                    className="w-full h-12 px-4 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-[#fb923c] transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-white/60 text-xs mb-1.5">Password</label>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => { setPassword(e.target.value); setError(''); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handlePasswordLogin(); }}
+                    autoComplete="current-password"
+                    placeholder="••••••••"
+                    className="w-full h-12 px-4 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-[#fb923c] transition-colors"
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={handlePasswordLogin}
+                disabled={loading || !username.trim() || !password}
+                className="w-full h-12 rounded-2xl bg-[linear-gradient(135deg,#f97316,#ea580c)] text-white font-semibold flex items-center justify-center gap-2 transition-all active:scale-95 hover:brightness-110 disabled:opacity-40 shadow-[0_6px_18px_rgba(249,115,22,0.35)]"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Verifying…
+                  </>
+                ) : (
+                  'Sign in'
+                )}
+              </button>
+
+              {error && (
+                <div className="flex items-center justify-center gap-2 mt-5 text-sm text-red-400 cv-pop">
+                  <AlertCircle className="w-4 h-4" />
+                  {error}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Error message (PIN mode) */}
+          {mode === 'pin' && error && (
+            <div className="flex items-center justify-center gap-2 mt-5 text-sm text-red-400 cv-pop">
               <AlertCircle className="w-4 h-4" />
               {error}
             </div>
           )}
-
-          {/* Loading */}
-          {loading && (
-            <div className="flex items-center justify-center gap-2 mb-5 text-sm text-[#fb923c]">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Verifying…
-            </div>
-          )}
-
-          {/* Keypad */}
-          <div className="grid grid-cols-3 gap-3">
-            {digits.map((d, i) => {
-              if (d === '') return <div key={i} />;
-              if (d === 'del') {
-                return (
-                  <button
-                    key={i}
-                    onClick={handleDelete}
-                    disabled={loading}
-                    className="h-16 rounded-2xl bg-[linear-gradient(135deg,#f97316,#ea580c)] text-white flex items-center justify-center transition-all active:scale-90 disabled:opacity-40 hover:brightness-110"
-                  >
-                    <Delete className="w-6 h-6" />
-                  </button>
-                );
-              }
-              return (
-                <button
-                  key={i}
-                  onClick={() => handleDigit(d)}
-                  disabled={loading || pin.length >= 4}
-                  className="h-16 rounded-2xl bg-[linear-gradient(135deg,#f97316,#ea580c)] text-white text-2xl font-semibold flex items-center justify-center transition-all active:scale-90 disabled:opacity-40 hover:brightness-110 shadow-[0_6px_18px_rgba(249,115,22,0.35)]"
-                >
-                  {d}
-                </button>
-              );
-            })}
-          </div>
 
           <p className="text-center text-white/40 text-xs mt-5">
             Forgot your PIN? Contact your administrator.
