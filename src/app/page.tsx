@@ -129,25 +129,25 @@ export default function PinLoginPage() {
         </div>
 
         {/* Store / PIN card */}
-        <div className="bg-white border border-[rgba(15,23,42,0.08)] rounded-3xl p-8 shadow-[0_8px_40px_rgba(15,23,42,0.10)] cv-fade-up" style={{ animationDelay: '0.08s' }}>
+        <div className="bg-gradient-to-b from-[#123a72] via-[#0e2a57] to-[#0a1120] border border-white/10 rounded-3xl p-8 shadow-[0_20px_60px_rgba(10,17,32,0.45)] cv-fade-up" style={{ animationDelay: '0.08s' }}>
           {/* Rotating gradient ring avatar */}
           <div className="relative mb-6 mx-auto w-20 h-20">
             <div
               className="absolute -inset-1.5 rounded-full cv-spin-slow"
-              style={{ background: 'conic-gradient(from 0deg, #35c8f5, #2f6fd6, #22b7ef, #2f6fd6, #35c8f5)' }}
+              style={{ background: 'conic-gradient(from 0deg, #f97316, #2f6fd6, #22b7ef, #2f6fd6, #f97316)' }}
             />
-            <div className="absolute inset-0 rounded-full bg-[#0c1322] cv-glow-pulse flex items-center justify-center overflow-hidden">
+            <div className="absolute inset-0 rounded-full bg-[#0a1120] cv-glow-pulse flex items-center justify-center overflow-hidden">
               {settings.logoBase64 ? (
                 <img src={settings.logoBase64} alt="Store logo" className="w-full h-full object-contain p-2" />
               ) : (
-                <Pill className="w-9 h-9 text-[#35c8f5]" />
+                <Pill className="w-9 h-9 text-[#fb923c]" />
               )}
             </div>
           </div>
 
           <div className="text-center mb-7">
-            <h1 className="text-xl font-bold text-[#0c1322]">{settings.storeName || 'Global Pharmacy'}</h1>
-            <p className="text-[#64748b] text-sm mt-1">
+            <h1 className="text-xl font-bold text-white">{settings.storeName || 'Global Pharmacy'}</h1>
+            <p className="text-white/60 text-sm mt-1">
               {loading ? 'Verifying your PIN...' : 'Enter your 4-digit PIN to sign in'}
             </p>
           </div>
@@ -162,8 +162,8 @@ export default function PinLoginPage() {
                 key={i}
                 className={`h-4 w-4 rounded-full transition-all duration-300 ${
                   i < pin.length
-                    ? 'cv-pop bg-[linear-gradient(135deg,#35c8f5,#2f6fd6)] shadow-[0_0_14px_rgba(47,111,214,0.55)]'
-                    : 'border-2 border-slate-300 bg-white'
+                    ? 'cv-pop bg-[linear-gradient(135deg,#f97316,#fb923c)] shadow-[0_0_14px_rgba(249,115,22,0.55)]'
+                    : 'border-2 border-white/20 bg-white/5'
                 }`}
               />
             ))}
@@ -171,7 +171,7 @@ export default function PinLoginPage() {
 
           {/* Error message */}
           {error && (
-            <div className="flex items-center justify-center gap-2 mb-5 text-sm text-red-500 cv-pop">
+            <div className="flex items-center justify-center gap-2 mb-5 text-sm text-red-400 cv-pop">
               <AlertCircle className="w-4 h-4" />
               {error}
             </div>
@@ -179,7 +179,7 @@ export default function PinLoginPage() {
 
           {/* Loading */}
           {loading && (
-            <div className="flex items-center justify-center gap-2 mb-5 text-sm text-[#2f6fd6]">
+            <div className="flex items-center justify-center gap-2 mb-5 text-sm text-[#fb923c]">
               <Loader2 className="w-4 h-4 animate-spin" />
               Verifying…
             </div>
@@ -195,18 +195,23 @@ export default function PinLoginPage() {
                     key={i}
                     onClick={handleDelete}
                     disabled={loading}
-                    className="h-16 rounded-2xl bg-slate-100 hover:bg-slate-200 text-[#0c1322] flex items-center justify-center transition-all active:scale-90 disabled:opacity-40"
+                    className="h-16 rounded-2xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all active:scale-90 disabled:opacity-40"
                   >
                     <Delete className="w-6 h-6" />
                   </button>
                 );
               }
+              const isOrange = Number(d) % 2 === 0;
               return (
                 <button
                   key={i}
                   onClick={() => handleDigit(d)}
                   disabled={loading || pin.length >= 4}
-                  className="h-16 rounded-2xl bg-white border border-slate-200 shadow-sm hover:border-[#2f6fd6]/35 hover:shadow-md hover:-translate-y-0.5 active:scale-90 active:translate-y-0 text-[#0c1322] text-2xl font-semibold flex items-center justify-center transition-all disabled:opacity-40"
+                  className={`h-16 rounded-2xl text-white text-2xl font-semibold flex items-center justify-center transition-all active:scale-90 disabled:opacity-40 ${
+                    isOrange
+                      ? 'bg-[linear-gradient(135deg,#f97316,#ea580c)] shadow-[0_6px_18px_rgba(249,115,22,0.35)] hover:brightness-110'
+                      : 'bg-[linear-gradient(135deg,#3b82f6,#2f6fd6)] shadow-[0_6px_18px_rgba(47,111,214,0.35)] hover:brightness-110'
+                  }`}
                 >
                   {d}
                 </button>
@@ -214,7 +219,7 @@ export default function PinLoginPage() {
             })}
           </div>
 
-          <p className="text-center text-slate-400 text-xs mt-5">
+          <p className="text-center text-white/40 text-xs mt-5">
             Forgot your PIN? Contact your administrator.
           </p>
         </div>
