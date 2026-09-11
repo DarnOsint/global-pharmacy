@@ -130,13 +130,23 @@ export default function PinLoginPage() {
 
         {/* Store / PIN card */}
         <div className="bg-gradient-to-b from-[#123a72] via-[#0e2a57] to-[#0a1120] border border-white/10 rounded-3xl p-8 shadow-[0_20px_60px_rgba(10,17,32,0.45)] cv-fade-up" style={{ animationDelay: '0.08s' }}>
-          {/* Store logo — clean, no background */}
-          <div className="flex justify-center mb-6">
-            {settings.logoBase64 ? (
-              <img src={settings.logoBase64} alt="Store logo" className="w-24 h-24 object-contain drop-shadow-lg" />
-            ) : (
-              <Pill className="w-12 h-12 text-[#fb923c]" />
-            )}
+          {/* Store logo — transparent logo inside a hollow rotating ring */}
+          <div className="relative mx-auto w-28 h-28 mb-6">
+            <div
+              className="absolute inset-0 rounded-full cv-spin-slow"
+              style={{
+                background: 'conic-gradient(from 0deg, #f97316, #2f6fd6, #22b7ef, #2f6fd6, #f97316)',
+                mask: 'radial-gradient(farthest-side, transparent calc(100% - 7px), black calc(100% - 6px))',
+                WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 7px), black calc(100% - 6px))',
+              }}
+            />
+            <div className="absolute inset-0 flex items-center justify-center">
+              {settings.logoBase64 ? (
+                <img src={settings.logoBase64} alt="Store logo" className="w-20 h-20 object-contain drop-shadow-lg" />
+              ) : (
+                <Pill className="w-10 h-10 text-[#fb923c]" />
+              )}
+            </div>
           </div>
 
           <div className="text-center mb-7">
