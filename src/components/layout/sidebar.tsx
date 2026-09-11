@@ -25,17 +25,17 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { href: '/pos', label: 'POS', icon: ScanLine, roles: ['cashier'] },
+  { href: '/pos', label: 'POS', icon: ScanLine, roles: ['pharmacist'] },
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin'] },
-  { href: '/inventory', label: 'Inventory', icon: Package, roles: ['pharmacist', 'store_manager', 'admin'] },
+  { href: '/inventory', label: 'Inventory', icon: Package, roles: ['cashier', 'store_manager', 'admin'] },
   { href: '/sales', label: 'Sales', icon: ShoppingCart, roles: ['admin'] },
   { href: '/invoices', label: 'Invoices', icon: FileText, roles: ['admin'] },
-  { href: '/purchases', label: 'Purchases', icon: Receipt, roles: ['pharmacist', 'store_manager', 'admin'] },
-  { href: '/suppliers', label: 'Suppliers', icon: Truck, roles: ['pharmacist', 'store_manager', 'admin'] },
+  { href: '/purchases', label: 'Purchases', icon: Receipt, roles: ['cashier', 'store_manager', 'admin'] },
+  { href: '/suppliers', label: 'Suppliers', icon: Truck, roles: ['cashier', 'store_manager', 'admin'] },
   { href: '/customers', label: 'Customers', icon: UserCheck, roles: ['admin'] },
   { href: '/expenses', label: 'Expenses', icon: CreditCard, roles: ['admin'] },
   { href: '/hr', label: 'HR & Payroll', icon: Users, roles: ['admin'] },
-  { href: '/alerts', label: 'Expiry Alerts', icon: AlertTriangle, roles: ['pharmacist', 'store_manager', 'admin'], hasAlert: true },
+  { href: '/alerts', label: 'Expiry Alerts', icon: AlertTriangle, roles: ['cashier', 'store_manager', 'admin'], hasAlert: true },
   { href: '/reports', label: 'Reports', icon: BarChart3, roles: ['admin'] },
   { href: '/settings', label: 'Settings', icon: Settings, roles: ['admin'] },
 ];
