@@ -7,7 +7,7 @@ import { useAuthStore } from '@/lib/auth';
 const SETTINGS_KEY = 'app-settings';
 const LAST_SYNC_LS = 'gp-settings-last-synced-at';
 
-type SyncableSettings = Omit<StoreSettings, 'logoBase64' | 'updatedAt'>;
+type SyncableSettings = Omit<StoreSettings, 'updatedAt'>;
 
 const SYNC_FIELDS: (keyof SyncableSettings)[] = [
   'storeName',
@@ -21,6 +21,7 @@ const SYNC_FIELDS: (keyof SyncableSettings)[] = [
   'expiryWarningDays',
   'exchangeRate',
   'categories',
+  'logoBase64',
 ];
 
 function getLastSyncedAt(): number {

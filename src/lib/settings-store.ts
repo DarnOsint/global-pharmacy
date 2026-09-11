@@ -59,8 +59,8 @@ export const useSettingsStore = create<SettingsStore>()(
       ...defaultSettings,
       updateSettings: (settings) =>
         set((state) => ({ ...state, ...settings, updatedAt: Date.now() })),
-      setLogo: (base64) => set({ logoBase64: base64 }),
-      clearLogo: () => set({ logoBase64: null }),
+      setLogo: (base64) => set({ logoBase64: base64, updatedAt: Date.now() }),
+      clearLogo: () => set({ logoBase64: null, updatedAt: Date.now() }),
       addCategory: (name) =>
         set((state) => {
           const slug = name.toLowerCase().trim();
