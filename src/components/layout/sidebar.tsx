@@ -44,7 +44,7 @@ const roleBadge: Record<string, string> = {
   admin: 'bg-red-100 text-red-700',
   pharmacist: 'bg-green-100 text-green-700',
   cashier: 'bg-yellow-100 text-yellow-700',
-  store_manager: 'bg-blue-100 text-blue-700',
+  store_manager: 'bg-orange-100 text-orange-700',
 };
 
 function countExpiryAlerts(products: { is_active: boolean; expiry_date: string; alert_days?: number }[]): number {
