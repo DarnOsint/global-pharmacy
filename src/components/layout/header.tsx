@@ -2,12 +2,12 @@
 
 import { useAppStore } from '@/lib/store';
 import { useSync } from '@/lib/use-sync';
-import { Menu, Wifi, WifiOff, CloudOff, RefreshCw } from 'lucide-react';
+import { Menu, Wifi, WifiOff, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export function Header() {
   const { toggleSidebar, isOnline } = useAppStore();
-  const { pendingCount, syncing, syncNow } = useSync();
+  const { pendingCount, failedCount, syncing, syncNow } = useSync();
   const [currentTime, setCurrentTime] = useState('');
 
   useEffect(() => {
@@ -51,6 +51,18 @@ export function Header() {
         >
           <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} />
           {syncing ? 'Syncing...' : `${pendingCount} pending`}
+        </button>
+      )}
+
+      {failedCount > 0 && (
+        <button
+          onClick={() => syncNow()}
+          disabled={!isOnline || syncing}
+          title="Some changes failed to sync to the cloud. Check your Supabase setup."
+          className="flex items-center gap-1.5 text-xs text-danger bg-danger/10 px-3 py-1.5 rounded-full hover:bg-danger/20 transition-colors disabled:opacity-50"
+        >
+          <AlertTriangle className="w-3 h-3" />
+          {failedCount} failed
         </button>
       )}
 

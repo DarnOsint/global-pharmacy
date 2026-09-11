@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { PWAProvider } from "@/components/pwa-provider";
+import { SyncProvider } from "@/components/sync-provider";
 
 export const metadata: Metadata = {
   title: "Global Pharmacy",
@@ -38,6 +39,7 @@ export default function RootLayout({
       </head>
       <body className="antialiased min-h-screen bg-background text-foreground">
         <PWAProvider>
+          <SyncProvider />
           {children}
         </PWAProvider>
       </body>

@@ -33,8 +33,10 @@ CREATE TABLE products (
   barcode TEXT,
   unit_price NUMERIC(12,2) NOT NULL DEFAULT 0,
   cost_price NUMERIC(12,2) NOT NULL DEFAULT 0,
+  currency TEXT NOT NULL DEFAULT 'SSP',
   quantity_in_stock INTEGER NOT NULL DEFAULT 0,
   reorder_level INTEGER NOT NULL DEFAULT 10,
+  alert_days INTEGER NOT NULL DEFAULT 30,
   expiry_date DATE NOT NULL,
   batch_number TEXT NOT NULL DEFAULT '',
   manufacturer TEXT NOT NULL DEFAULT '',
@@ -66,6 +68,7 @@ CREATE TABLE sales (
   discount NUMERIC(12,2) NOT NULL DEFAULT 0,
   tax NUMERIC(12,2) NOT NULL DEFAULT 0,
   total NUMERIC(12,2) NOT NULL DEFAULT 0,
+  currency TEXT NOT NULL DEFAULT 'SSP',
   payment_method payment_method NOT NULL DEFAULT 'cash',
   status sale_status NOT NULL DEFAULT 'completed',
   notes TEXT,
@@ -92,6 +95,7 @@ CREATE TABLE purchases (
   subtotal NUMERIC(12,2) NOT NULL DEFAULT 0,
   tax NUMERIC(12,2) NOT NULL DEFAULT 0,
   total NUMERIC(12,2) NOT NULL DEFAULT 0,
+  currency TEXT NOT NULL DEFAULT 'SSP',
   status order_status NOT NULL DEFAULT 'ordered',
   notes TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -113,9 +117,22 @@ CREATE TABLE expenses (
   category TEXT NOT NULL DEFAULT 'other',
   description TEXT NOT NULL,
   amount NUMERIC(12,2) NOT NULL DEFAULT 0,
+  currency TEXT NOT NULL DEFAULT 'SSP',
   date DATE NOT NULL DEFAULT CURRENT_DATE,
   user_id UUID NOT NULL,
   receipt_url TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- BUDGETS
+CREATE TABLE budgets (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  category TEXT NOT NULL DEFAULT 'other',
+  amount NUMERIC(12,2) NOT NULL DEFAULT 0,
+  currency TEXT NOT NULL DEFAULT 'SSP',
+  period TEXT NOT NULL DEFAULT 'monthly',
+  month TEXT NOT NULL DEFAULT '',
+  spent NUMERIC(12,2) NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -174,6 +191,7 @@ ALTER TABLE purchase_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE staff ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payroll ENABLE ROW LEVEL SECURITY;
+ALTER TABLE budgets ENABLE ROW LEVEL SECURITY;
 
 -- Permissive policies (adjust based on your auth setup)
 CREATE POLICY "Allow all" ON suppliers FOR ALL USING (true);
@@ -186,6 +204,7 @@ CREATE POLICY "Allow all" ON purchase_items FOR ALL USING (true);
 CREATE POLICY "Allow all" ON expenses FOR ALL USING (true);
 CREATE POLICY "Allow all" ON staff FOR ALL USING (true);
 CREATE POLICY "Allow all" ON payroll FOR ALL USING (true);
+CREATE POLICY "Allow all" ON budgets FOR ALL USING (true);
 
 -- STAFF PINS (for POS login)
 CREATE TABLE staff_pins (

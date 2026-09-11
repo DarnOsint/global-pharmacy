@@ -80,12 +80,13 @@ export async function getAllSales(): Promise<Sale[]> {
 export async function addSale(sale: Omit<Sale, 'id' | 'created_at'>, items: Omit<SaleItem, 'id' | 'sale_id'>[]): Promise<Sale> {
   const saleId = generateId();
   const fullSale: Sale = { ...sale, id: saleId, created_at: now() };
+  const fullItems: SaleItem[] = items.map((item) => ({ ...item, id: generateId(), sale_id: saleId }));
   await db.sales.add(fullSale);
-  for (const item of items) {
-    const saleItem: SaleItem = { ...item, id: generateId(), sale_id: saleId };
-    await db.saleItems.add(saleItem);
+  await db.saleItems.bulkAdd(fullItems);
+  await queueMutation('sales', 'create', fullSale, saleId);
+  for (const item of fullItems) {
+    await queueMutation('sale_items', 'create', item, item.id);
   }
-  await queueMutation('sales', 'create', { sale: fullSale, items }, saleId);
   return fullSale;
 }
 
@@ -95,6 +96,10 @@ export async function updateSale(id: string, data: Partial<Sale>): Promise<void>
 }
 
 export async function deleteSale(id: string): Promise<void> {
+  const items = await db.saleItems.where('sale_id').equals(id).toArray();
+  for (const item of items) {
+    await queueMutation('sale_items', 'delete', { id: item.id }, item.id);
+  }
   await db.saleItems.where('sale_id').equals(id).delete();
   await db.sales.delete(id);
   await queueMutation('sales', 'delete', { id }, id);
@@ -108,12 +113,13 @@ export async function getAllPurchases(): Promise<Purchase[]> {
 export async function addPurchase(purchase: Omit<Purchase, 'id' | 'created_at'>, items: Omit<PurchaseItem, 'id' | 'purchase_id'>[]): Promise<Purchase> {
   const purchaseId = generateId();
   const fullPurchase: Purchase = { ...purchase, id: purchaseId, created_at: now() };
+  const fullItems: PurchaseItem[] = items.map((item) => ({ ...item, id: generateId(), purchase_id: purchaseId }));
   await db.purchases.add(fullPurchase);
-  for (const item of items) {
-    const purchaseItem: PurchaseItem = { ...item, id: generateId(), purchase_id: purchaseId };
-    await db.purchaseItems.add(purchaseItem);
+  await db.purchaseItems.bulkAdd(fullItems);
+  await queueMutation('purchases', 'create', fullPurchase, purchaseId);
+  for (const item of fullItems) {
+    await queueMutation('purchase_items', 'create', item, item.id);
   }
-  await queueMutation('purchases', 'create', { purchase: fullPurchase, items }, purchaseId);
   return fullPurchase;
 }
 
@@ -123,6 +129,10 @@ export async function updatePurchase(id: string, data: Partial<Purchase>): Promi
 }
 
 export async function deletePurchase(id: string): Promise<void> {
+  const items = await db.purchaseItems.where('purchase_id').equals(id).toArray();
+  for (const item of items) {
+    await queueMutation('purchase_items', 'delete', { id: item.id }, item.id);
+  }
   await db.purchaseItems.where('purchase_id').equals(id).delete();
   await db.purchases.delete(id);
   await queueMutation('purchases', 'delete', { id }, id);

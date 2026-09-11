@@ -1,96 +1,104 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { getPendingCount, getPendingMutations, markSynced, clearSynced, type PendingMutation } from '@/lib/sync';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { getPendingCount, getFailedCount } from '@/lib/sync';
+import { runSync, checkConnection, type SyncResult } from '@/lib/sync-engine';
 import { useAppStore } from '@/lib/store';
-import { supabase } from '@/lib/supabase';
 
-async function syncMutationToSupabase(mutation: PendingMutation): Promise<boolean> {
-  try {
-    const { table, operation, data } = mutation;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const fromTable = supabase.from(table as any);
-
-    switch (operation) {
-      case 'create': {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error } = await (fromTable as any).upsert(data, { onConflict: 'id' });
-        return !error;
-      }
-      case 'update': {
-        const d = data as Record<string, unknown>;
-        const id = d.id;
-        const { id: _, ...updates } = d;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error } = await (fromTable as any).update(updates).eq('id', id);
-        return !error;
-      }
-      case 'delete': {
-        const d = data as Record<string, unknown>;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error } = await (fromTable as any).delete().eq('id', d.id);
-        return !error;
-      }
-      default:
-        return false;
-    }
-  } catch {
-    return false;
-  }
-}
+let inFlight: Promise<SyncResult | null> | null = null;
+let instances = 0;
+let driverActive = false;
 
 export function useSync() {
   const [pendingCount, setPendingCount] = useState(0);
+  const [failedCount, setFailedCount] = useState(0);
   const [syncing, setSyncing] = useState(false);
+  const [lastSyncError, setLastSyncError] = useState<string | null>(null);
   const { setIsOnline, setPendingSync } = useAppStore();
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const refreshCount = useCallback(async () => {
-    const count = await getPendingCount();
-    setPendingCount(count);
-    setPendingSync(count);
+    const [pending, failed] = await Promise.all([getPendingCount(), getFailedCount()]);
+    setPendingCount(pending);
+    setFailedCount(failed);
+    setPendingSync(pending);
   }, [setPendingSync]);
 
-  const syncNow = useCallback(async () => {
-    if (!navigator.onLine || syncing) return;
+  const syncNow = useCallback(async (): Promise<SyncResult | null> => {
+    if (inFlight) return inFlight;
     setSyncing(true);
-    try {
-      const mutations = await getPendingMutations();
-      if (mutations.length === 0) { setSyncing(false); return; }
-
-      const syncedIds: number[] = [];
-      for (const mutation of mutations) {
-        const success = await syncMutationToSupabase(mutation);
-        if (success) syncedIds.push(mutation.id!);
+    inFlight = (async () => {
+      try {
+        const online = await checkConnection();
+        setIsOnline(online);
+        if (online) {
+          const result = await runSync();
+          setLastSyncError(result.error);
+          return result;
+        }
+        return { pushed: 0, pulled: 0, error: null, online: false } as SyncResult;
+      } finally {
+        inFlight = null;
+        setSyncing(false);
+        await refreshCount();
       }
-
-      if (syncedIds.length > 0) {
-        await markSynced(syncedIds);
-        await clearSynced();
-      }
-      await refreshCount();
-    } finally {
-      setSyncing(false);
-    }
-  }, [syncing, refreshCount]);
+    })();
+    return inFlight;
+  }, [setIsOnline, refreshCount]);
 
   useEffect(() => {
-    const handleOnline = () => { setIsOnline(true); syncNow(); };
-    const handleOffline = () => setIsOnline(false);
+    instances += 1;
+    const isDriver = !driverActive && instances === 1;
+    if (isDriver) driverActive = true;
 
-    setIsOnline(navigator.onLine);
-    refreshCount();
+    let cancelled = false;
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    if (isDriver) {
+      const initial = async () => {
+        if (!cancelled) await refreshCount();
+        if (!cancelled) await syncNow();
+      };
+      initial();
 
-    const interval = setInterval(refreshCount, 30000);
+      const onPending = () => {
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => {
+          void syncNow();
+        }, 1500);
+      };
+      const onOnline = () => {
+        void syncNow();
+      };
+      const onOffline = () => {
+        setIsOnline(false);
+      };
+
+      window.addEventListener('mutation-queued', onPending);
+      window.addEventListener('online', onOnline);
+      window.addEventListener('offline', onOffline);
+      const interval = setInterval(() => {
+        refreshCount();
+        void syncNow();
+      }, 30000);
+
+      return () => {
+        cancelled = true;
+        window.removeEventListener('mutation-queued', onPending);
+        window.removeEventListener('online', onOnline);
+        window.removeEventListener('offline', onOffline);
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        clearInterval(interval);
+        instances = Math.max(0, instances - 1);
+        if (isDriver) driverActive = false;
+      };
+    }
 
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-      clearInterval(interval);
+      cancelled = true;
+      instances = Math.max(0, instances - 1);
+      if (isDriver) driverActive = false;
     };
-  }, [setIsOnline, refreshCount, syncNow]);
+  }, [syncNow, refreshCount, setIsOnline]);
 
-  return { pendingCount, syncing, syncNow, refreshCount };
+  return { pendingCount, failedCount, syncing, syncNow, refreshCount, lastSyncError };
 }
