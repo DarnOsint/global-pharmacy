@@ -305,8 +305,12 @@ export default function HRPage() {
                   <tr className="border-b border-border bg-muted/50">
                     <th className="text-left p-3 font-medium">Staff Member</th>
                     <th className="text-left p-3 font-medium">Period</th>
+                    <th className="text-right p-3 font-medium">Base Salary</th>
+                    <th className="text-right p-3 font-medium">Allowances</th>
+                    <th className="text-right p-3 font-medium">Deductions</th>
                     <th className="text-right p-3 font-medium">Net Pay</th>
                     <th className="text-left p-3 font-medium">Status</th>
+                    <th className="text-left p-3 font-medium">Paid Date</th>
                     {showPayrollHeader && <th className="text-right p-3 font-medium">Actions</th>}
                   </tr>
                 </thead>
@@ -315,8 +319,12 @@ export default function HRPage() {
                     <tr key={p.id} className="border-b border-border hover:bg-muted/30">
                       <td className="p-3 font-medium">{getStaffName(p.staff_id)}</td>
                       <td className="p-3 text-muted-foreground">{formatDate(p.period_start)} → {formatDate(p.period_end)}</td>
+                      <td className="p-3 text-right text-muted-foreground">{formatCurrency(p.base_salary, 'SSP')}</td>
+                      <td className="p-3 text-right text-success">+{formatCurrency(p.allowances, 'SSP')}</td>
+                      <td className="p-3 text-right text-danger">-{formatCurrency(p.deductions, 'SSP')}</td>
                       <td className="p-3 text-right font-bold text-primary">{formatCurrency(p.net_pay, 'SSP')}</td>
                       <td className="p-3"><Badge variant={p.status === 'paid' ? 'success' : 'warning'}>{p.status}</Badge></td>
+                      <td className="p-3 text-muted-foreground">{p.paid_at ? formatDate(p.paid_at) : '—'}</td>
                       {showPayrollHeader && (
                         <td className="p-3 text-right">
                           <button onClick={() => { setEditPayroll(p); setShowEditPayroll(true); }} className="p-1.5 rounded hover:bg-muted"><Edit2 className="w-4 h-4" /></button>
