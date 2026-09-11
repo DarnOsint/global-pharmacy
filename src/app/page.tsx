@@ -27,7 +27,7 @@ export default function PinLoginPage() {
 
   useEffect(() => {
     if (!hasHydrated || !isAuthenticated || !user) return;
-    const roleHome: Record<string, string> = { pharmacist: '/dashboard', cashier: '/dashboard', general_manager: '/dashboard', admin: '/dashboard' };
+    const roleHome: Record<string, string> = { pharmacist: '/pos', cashier: '/dashboard', general_manager: '/dashboard', admin: '/dashboard' };
     router.replace(roleHome[user.role] || '/dashboard');
   }, [hasHydrated, isAuthenticated, user, router]);
 
@@ -50,7 +50,7 @@ export default function PinLoginPage() {
               pin: staff.pin,
             };
             login(user);
-            const roleHome: Record<string, string> = { pharmacist: '/dashboard', cashier: '/dashboard', general_manager: '/dashboard', admin: '/dashboard' };
+            const roleHome: Record<string, string> = { pharmacist: '/pos', cashier: '/dashboard', general_manager: '/dashboard', admin: '/dashboard' };
             router.push(roleHome[user.role] || '/dashboard');
           } else {
             setError('Invalid PIN. Please try again.');

@@ -1,11 +1,11 @@
 'use client';
 
 import { useAuthStore } from '@/lib/auth';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 
 const roleHome: Record<string, string> = {
-  pharmacist: '/dashboard',
+  pharmacist: '/pos',
   cashier: '/dashboard',
   general_manager: '/dashboard',
   admin: '/dashboard',
@@ -14,6 +14,7 @@ const roleHome: Record<string, string> = {
 export function AuthGuard({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: string[] }) {
   const { isAuthenticated, user, hasHydrated } = useAuthStore();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (!hasHydrated) return;
@@ -23,12 +24,17 @@ export function AuthGuard({ children, allowedRoles }: { children: React.ReactNod
     }
     if (allowedRoles && user && !allowedRoles.includes(user.role)) {
       router.replace(roleHome[user.role] || '/dashboard');
+      return;
     }
-  }, [hasHydrated, isAuthenticated, user, router, allowedRoles]);
+    if (user && user.role === 'pharmacist' && pathname !== '/pos') {
+      router.replace('/pos');
+    }
+  }, [hasHydrated, isAuthenticated, user, router, allowedRoles, pathname]);
 
   if (!hasHydrated) return null;
   if (!isAuthenticated) return null;
   if (allowedRoles && user && !allowedRoles.includes(user.role)) return null;
+  if (user && user.role === 'pharmacist' && pathname !== '/pos') return null;
 
   return <>{children}</>;
 }
