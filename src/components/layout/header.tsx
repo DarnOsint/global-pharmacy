@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 
 export function Header() {
   const { toggleSidebar, isOnline } = useAppStore();
-  const { pendingCount, failedCount, syncing, syncNow } = useSync();
+  const { pendingCount, failedCount, syncing, syncNow, lastSyncError } = useSync();
   const [currentTime, setCurrentTime] = useState('');
 
   useEffect(() => {
@@ -68,6 +68,18 @@ export function Header() {
         >
           <AlertTriangle className="w-3 h-3" />
           {failedCount} failed
+        </button>
+      )}
+
+      {lastSyncError && (
+        <button
+          onClick={() => syncNow()}
+          disabled={!isOnline || syncing}
+          title={lastSyncError}
+          className="flex items-center gap-1.5 text-xs text-warning bg-warning/10 px-3 py-1.5 rounded-full hover:bg-warning/20 transition-colors disabled:opacity-50"
+        >
+          <AlertTriangle className="w-3 h-3" />
+          Sync error
         </button>
       )}
 
