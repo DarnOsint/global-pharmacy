@@ -6,6 +6,7 @@ import { AppShell } from '@/components/layout/app-shell';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { StatCard } from '@/components/ui/stat-card';
+import { SyncNowButton } from '@/components/sync-now-button';
 import {
   getAllProducts,
   getAllSales,
@@ -213,6 +214,9 @@ export default function DashboardPage() {
                   day: 'numeric',
                 })}
               </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <SyncNowButton label="Sync Now" />
             </div>
           </div>
 

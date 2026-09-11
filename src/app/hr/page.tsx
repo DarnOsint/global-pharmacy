@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Modal } from '@/components/ui/modal';
+import { SyncNowButton } from '@/components/sync-now-button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Users, Plus, Edit2 } from 'lucide-react';
@@ -116,11 +117,14 @@ export default function HRPage() {
             <h1 className="text-2xl font-bold">HR & Payroll</h1>
             <p className="text-sm text-muted-foreground">{staffList.length} staff members</p>
           </div>
-          {isAdmin && (
-            <Button onClick={() => activeTab === 'staff' ? setShowAddStaff(true) : setShowPayrollModal(true)}>
-              <Plus className="w-4 h-4 mr-2" /> {activeTab === 'staff' ? 'Add Staff' : 'Process Payroll'}
-            </Button>
-          )}
+          <div className="flex items-center gap-2 flex-wrap">
+            <SyncNowButton label="Sync Now" />
+            {isAdmin && (
+              <Button onClick={() => activeTab === 'staff' ? setShowAddStaff(true) : setShowPayrollModal(true)}>
+                <Plus className="w-4 h-4 mr-2" /> {activeTab === 'staff' ? 'Add Staff' : 'Process Payroll'}
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="flex gap-2 border-b border-border">

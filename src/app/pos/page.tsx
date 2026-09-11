@@ -6,6 +6,7 @@ import { AuthGuard } from '@/components/auth-guard';
 import { useAuthStore } from '@/lib/auth';
 import { useSettingsStore } from '@/lib/settings-store';
 import { useSync } from '@/lib/use-sync';
+import { SyncNowButton } from '@/components/sync-now-button';
 import {
   getAllProducts,
   addSale,
@@ -272,6 +273,7 @@ ${settings.logoBase64 ? `<div class="logo"><img src="${settings.logoBase64}" /><
           </div>
           <span className="text-white/70 text-sm">Point of Sale</span>
           <div className="flex-1" />
+          <SyncNowButton label="Sync" inverted showCount={false} className="mr-2" />
           <a href="/dashboard" className="text-white/80 hover:text-white text-sm hidden sm:block">Dashboard</a>
           <span className="text-white/50 text-sm hidden sm:block">{user?.first_name} {user?.last_name}</span>
           <button

@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useSettingsStore } from '@/lib/settings-store';
+import { SyncNowButton } from '@/components/sync-now-button';
 import { useAuthStore } from '@/lib/auth';
 import { Settings, Store, Bell, Shield, Upload, X, Image, User, Save, AlertTriangle, DollarSign, Tag, Plus, Download, Info, Pill } from 'lucide-react';
 import * as XLSX from 'xlsx';
@@ -168,6 +169,9 @@ export default function SettingsPage() {
               <Save className="w-4 h-4" /> Saved!
             </div>
           )}
+          <div className="flex items-center gap-2">
+            <SyncNowButton label="Push to All Systems" />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

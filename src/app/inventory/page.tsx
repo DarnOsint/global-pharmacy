@@ -10,6 +10,7 @@ import { Select } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Modal } from '@/components/ui/modal';
 import { EmptyState } from '@/components/ui/empty-state';
+import { SyncNowButton } from '@/components/sync-now-button';
 import { Package, Plus, Search, Edit2, Trash2, Eye, Upload, Download, ScanLine } from 'lucide-react';
 import { BarcodeScanner } from '@/components/ui/barcode-scanner';
 import * as XLSX from 'xlsx';
@@ -231,6 +232,7 @@ export default function InventoryPage() {
             <p className="text-sm text-muted-foreground">{products.length} products in stock</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
+            <SyncNowButton label="Sync Inventory" />
             <Button variant="outline" onClick={downloadTemplate}><Download className="w-4 h-4 mr-2" /> Template</Button>
             <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={importing}><Upload className="w-4 h-4 mr-2" /> {importing ? 'Importing...' : 'Import Excel'}</Button>
             <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImport} />
