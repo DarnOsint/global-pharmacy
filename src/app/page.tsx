@@ -195,23 +195,18 @@ export default function PinLoginPage() {
                     key={i}
                     onClick={handleDelete}
                     disabled={loading}
-                    className="h-16 rounded-2xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all active:scale-90 disabled:opacity-40"
+                    className="h-16 rounded-2xl bg-[linear-gradient(135deg,#f97316,#ea580c)] text-white flex items-center justify-center transition-all active:scale-90 disabled:opacity-40 hover:brightness-110"
                   >
                     <Delete className="w-6 h-6" />
                   </button>
                 );
               }
-              const isOrange = Number(d) % 2 === 0;
               return (
                 <button
                   key={i}
                   onClick={() => handleDigit(d)}
                   disabled={loading || pin.length >= 4}
-                  className={`h-16 rounded-2xl text-white text-2xl font-semibold flex items-center justify-center transition-all active:scale-90 disabled:opacity-40 ${
-                    isOrange
-                      ? 'bg-[linear-gradient(135deg,#f97316,#ea580c)] shadow-[0_6px_18px_rgba(249,115,22,0.35)] hover:brightness-110'
-                      : 'bg-[linear-gradient(135deg,#3b82f6,#2f6fd6)] shadow-[0_6px_18px_rgba(47,111,214,0.35)] hover:brightness-110'
-                  }`}
+                  className="h-16 rounded-2xl bg-[linear-gradient(135deg,#f97316,#ea580c)] text-white text-2xl font-semibold flex items-center justify-center transition-all active:scale-90 disabled:opacity-40 hover:brightness-110 shadow-[0_6px_18px_rgba(249,115,22,0.35)]"
                 >
                   {d}
                 </button>
