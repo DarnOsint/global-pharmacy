@@ -51,3 +51,11 @@ BEGIN
     CREATE POLICY "Allow all" ON settings FOR ALL USING (true);
   END IF;
 END $$;
+-- Rename role value: store_manager -> general_manager
+-- Renamed in place so existing rows keep their role automatically (PG 10+).
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_enum WHERE enumlabel = 'store_manager') THEN
+    ALTER TYPE user_role RENAME VALUE 'store_manager' TO 'general_manager';
+  END IF;
+END $$;

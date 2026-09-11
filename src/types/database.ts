@@ -157,7 +157,7 @@ export interface AppSettingsRow {
 }
 
 export type PaymentMethod = 'cash' | 'card' | 'transfer' | 'credit';
-export type UserRole = 'admin' | 'pharmacist' | 'cashier' | 'store_manager';
+export type UserRole = 'admin' | 'pharmacist' | 'cashier' | 'general_manager';
 
 export interface Database {
   public: {

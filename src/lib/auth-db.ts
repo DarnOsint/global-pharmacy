@@ -32,7 +32,7 @@ export const defaultStaffPins: StaffPin[] = [
   { id: '2', staff_id: 'a0000000-0000-0000-0000-000000000002', first_name: 'Nyamal', last_name: 'Kuol', role: 'pharmacist', pin: '5678' },
   { id: '3', staff_id: 'a0000000-0000-0000-0000-000000000003', first_name: 'Bol', last_name: 'Mawut', role: 'pharmacist', pin: '3456' },
   { id: '4', staff_id: 'a0000000-0000-0000-0000-000000000004', first_name: 'Akello', last_name: 'James', role: 'cashier', pin: '7890' },
-  { id: '5', staff_id: 'a0000000-0000-0000-0000-000000000005', first_name: 'Kur', last_name: 'Lual', role: 'store_manager', pin: '2345' },
+  { id: '5', staff_id: 'a0000000-0000-0000-0000-000000000005', first_name: 'Kur', last_name: 'Lual', role: 'general_manager', pin: '2345' },
 ];
 
 export async function seedAuthDb() {

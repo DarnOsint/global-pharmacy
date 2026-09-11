@@ -2,7 +2,7 @@
 -- Run this in your Supabase SQL Editor
 
 -- ENUMS
-CREATE TYPE user_role AS ENUM ('admin', 'pharmacist', 'cashier', 'store_manager');
+CREATE TYPE user_role AS ENUM ('admin', 'pharmacist', 'cashier', 'general_manager');
 CREATE TYPE payment_method AS ENUM ('cash', 'card', 'transfer', 'credit');
 CREATE TYPE order_status AS ENUM ('ordered', 'received', 'cancelled');
 CREATE TYPE sale_status AS ENUM ('completed', 'returned', 'cancelled');
@@ -235,7 +235,7 @@ INSERT INTO staff (id, first_name, last_name, role, phone, email, hire_date, sal
   ('2', 'Blessing', 'Okoro', 'pharmacist', '08023456789', 'blessing@globalpharmacy.com', '2024-03-20', 150000),
   ('3', 'Ibrahim', 'Mohammed', 'pharmacist', '08034567890', 'ibrahim@globalpharmacy.com', '2024-06-10', 150000),
   ('4', 'Ngozi', 'Adeyemi', 'cashier', '08045678901', 'ngozi@globalpharmacy.com', '2025-01-05', 95000),
-  ('5', 'Tunde', 'Olawale', 'store_manager', '08056789012', 'tunde@globalpharmacy.com', '2025-06-15', 120000)
+  ('5', 'Tunde', 'Olawale', 'general_manager', '08056789012', 'tunde@globalpharmacy.com', '2025-06-15', 120000)
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO staff_pins (staff_id, pin) VALUES

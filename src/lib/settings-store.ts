@@ -53,7 +53,7 @@ const defaultRoles: RoleConfig[] = [
   { id: 'admin', name: 'Admin', color: 'info' },
   { id: 'pharmacist', name: 'Pharmacist', color: 'success' },
   { id: 'cashier', name: 'Cashier', color: 'warning' },
-  { id: 'store_manager', name: 'Store Manager', color: 'default' },
+  { id: 'general_manager', name: 'General Manager', color: 'default' },
 ];
 
 const defaultSettings: StoreSettings = {
@@ -114,6 +114,15 @@ export const useSettingsStore = create<SettingsStore>()(
     {
       name: 'global-pharmacy-settings',
       storage: createJSONStorage(() => createIdbStorage()),
+      merge: (persisted, current) => {
+        const merged = { ...current, ...(persisted as Partial<StoreSettings>) };
+        merged.roles = (merged.roles || []).map((r) =>
+          r.id === 'store_manager'
+            ? { ...r, id: 'general_manager', name: r.name === 'Store Manager' ? 'General Manager' : r.name }
+            : r
+        );
+        return merged;
+      },
     }
   )
 );

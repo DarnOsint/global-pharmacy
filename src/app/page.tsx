@@ -27,7 +27,7 @@ export default function PinLoginPage() {
 
   useEffect(() => {
     if (!hasHydrated || !isAuthenticated || !user) return;
-    const roleHome: Record<string, string> = { pharmacist: '/pos', cashier: '/inventory', store_manager: '/inventory', admin: '/dashboard' };
+    const roleHome: Record<string, string> = { pharmacist: '/pos', cashier: '/inventory', general_manager: '/inventory', admin: '/dashboard' };
     router.replace(roleHome[user.role] || '/dashboard');
   }, [hasHydrated, isAuthenticated, user, router]);
 
@@ -50,7 +50,7 @@ export default function PinLoginPage() {
               pin: staff.pin,
             };
             login(user);
-            const roleHome: Record<string, string> = { pharmacist: '/pos', cashier: '/inventory', store_manager: '/inventory', admin: '/dashboard' };
+            const roleHome: Record<string, string> = { pharmacist: '/pos', cashier: '/inventory', general_manager: '/inventory', admin: '/dashboard' };
             router.push(roleHome[user.role] || '/dashboard');
           } else {
             setError('Invalid PIN. Please try again.');
@@ -87,7 +87,7 @@ export default function PinLoginPage() {
         pin: staff.pin,
       };
       login(user);
-      const roleHome: Record<string, string> = { pharmacist: '/pos', cashier: '/inventory', store_manager: '/inventory', admin: '/dashboard' };
+      const roleHome: Record<string, string> = { pharmacist: '/pos', cashier: '/inventory', general_manager: '/inventory', admin: '/dashboard' };
       router.push(roleHome[user.role] || '/dashboard');
     } else {
       setError('Invalid username or password.');

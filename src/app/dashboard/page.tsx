@@ -172,7 +172,7 @@ export default function DashboardPage() {
     admin: 'Admin',
     pharmacist: 'Pharmacist',
     cashier: 'Cashier',
-    store_manager: 'Manager',
+    general_manager: 'General Manager',
   };
 
   const expiryBadge = (days: number) => {

@@ -211,8 +211,18 @@ export async function migrateLegacyIds() {
   }
 }
 
+async function migrateStaffRoles() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rows = (await db.staff.toArray()) as any[];
+  const changed = rows
+    .filter((r) => r.role === 'store_manager')
+    .map((r) => ({ ...r, role: 'general_manager' }));
+  if (changed.length > 0) await db.staff.bulkPut(changed);
+}
+
 export async function seedOfflineData() {
   await migrateLegacyIds();
+  await migrateStaffRoles();
 
   const productCount = await db.products.count();
   if (productCount > 0) return;
@@ -267,7 +277,7 @@ export async function seedOfflineData() {
     { id: 'a0000000-0000-0000-0000-000000000002', first_name: 'Nyamal', last_name: 'Kuol', role: 'pharmacist', phone: '+211921234567', email: 'nyamal@globalpharmacy.ss', hire_date: '2024-03-20', salary: 350000, is_active: true, created_at: new Date().toISOString() },
     { id: 'a0000000-0000-0000-0000-000000000003', first_name: 'Bol', last_name: 'Mawut', role: 'pharmacist', phone: '+211922345678', email: 'bol@globalpharmacy.ss', hire_date: '2024-06-10', salary: 350000, is_active: true, created_at: new Date().toISOString() },
     { id: 'a0000000-0000-0000-0000-000000000004', first_name: 'Akello', last_name: 'James', role: 'cashier', phone: '+211923456789', email: 'akello@globalpharmacy.ss', hire_date: '2025-01-05', salary: 200000, is_active: true, created_at: new Date().toISOString() },
-    { id: 'a0000000-0000-0000-0000-000000000005', first_name: 'Kur', last_name: 'Lual', role: 'store_manager', phone: '+211924567890', email: 'kur@globalpharmacy.ss', hire_date: '2025-06-15', salary: 280000, is_active: true, created_at: new Date().toISOString() },
+    { id: 'a0000000-0000-0000-0000-000000000005', first_name: 'Kur', last_name: 'Lual', role: 'general_manager', phone: '+211924567890', email: 'kur@globalpharmacy.ss', hire_date: '2025-06-15', salary: 280000, is_active: true, created_at: new Date().toISOString() },
   ]);
 
   await db.payroll.bulkAdd([

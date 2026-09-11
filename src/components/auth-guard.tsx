@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 const roleHome: Record<string, string> = {
   pharmacist: '/pos',
   cashier: '/inventory',
-  store_manager: '/inventory',
+  general_manager: '/inventory',
   admin: '/dashboard',
 };
 
