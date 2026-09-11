@@ -51,7 +51,7 @@ const PULL_CONFIG: Record<TableName, PullConfig> = {
     defaults: { currency: 'SSP' },
   },
   staff: {
-    table: 'staff', remoteName: 'staff', tsColumn: 'created_at', numeric: ['salary'],
+    table: 'staff', remoteName: 'staff', tsColumn: 'updated_at', numeric: ['salary'],
   },
   payroll: {
     table: 'payroll', remoteName: 'payroll', tsColumn: 'created_at',
@@ -245,6 +245,11 @@ export async function pullFromSupabase(): Promise<number> {
   const pendingRecordIds = new Set(pending.map((m) => m.recordId));
   let pulled = 0;
 
+  // Sales and their line items are insert-only from remote: we pull NEW
+  // sales made on other devices so all reports are complete, but we never
+  // overwrite a local sale that was created on this device.
+  const INSERT_ONLY = new Set(['sales', 'sale_items', 'purchases', 'purchase_items']);
+
   for (const config of Object.values(PULL_CONFIG)) {
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -261,6 +266,8 @@ export async function pullFromSupabase(): Promise<number> {
       const localMap = new Map<string, Record<string, unknown>>(localRows.map((r) => [r.id, r]));
 
       const toUpsert: Record<string, unknown>[] = [];
+      const isInsertOnly = INSERT_ONLY.has(config.table);
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       for (const raw of data as any[]) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -269,19 +276,16 @@ export async function pullFromSupabase(): Promise<number> {
 
         const row = normalizeRow(config, raw);
         const existing = localMap.get(id);
-        if (!existing) {
-          toUpsert.push(row);
-          continue;
-        }
 
-        if (config.tsColumn === null) {
-          continue;
-        }
-
-        const remoteTs = getRowTs(raw, config);
-        const localTsValue = existing[config.tsColumn];
-        const localTs = typeof localTsValue === 'string' ? localTsValue : '';
-        if (remoteTs && remoteTs > localTs) {
+        if (isInsertOnly) {
+          // Sales / sale_items / purchases / purchase_items: pull only NEW
+          // records that don't exist locally yet; never overwrite existing.
+          if (!existing) {
+            toUpsert.push(row);
+          }
+        } else {
+          // Everything else (products, staff, expenses, etc.): remote always
+          // wins — the server data is the single source of truth.
           toUpsert.push(row);
         }
       }
