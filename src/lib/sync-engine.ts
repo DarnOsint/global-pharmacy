@@ -1,6 +1,8 @@
 import { supabase } from '@/lib/supabase';
 import { db } from '@/lib/db';
 import { getPendingMutations, markSynced, clearSynced, bumpAttempt, type PendingMutation } from '@/lib/sync';
+import { reconcileProducts } from '@/lib/reconcile';
+import { syncSettings } from '@/lib/settings-sync';
 
 export interface SyncResult {
   pushed: number;
@@ -316,6 +318,22 @@ export async function runSync(): Promise<SyncResult> {
   } catch (e) {
     const pullError = `Pull failed: ${errorMessage(e)}`;
     error = error ? `${error}; ${pullError}` : pullError;
+  }
+
+  try {
+    const reconcileError = await reconcileProducts();
+    if (reconcileError && !error) error = `Reconcile failed: ${reconcileError}`;
+  } catch (e) {
+    const recError = `Reconcile failed: ${errorMessage(e)}`;
+    error = error ? `${error}; ${recError}` : recError;
+  }
+
+  try {
+    const settingsError = await syncSettings();
+    if (settingsError && !error) error = `Settings sync failed: ${settingsError}`;
+  } catch (e) {
+    const setError = `Settings sync failed: ${errorMessage(e)}`;
+    error = error ? `${error}; ${setError}` : setError;
   }
 
   return { pushed, pulled, error, online: true };

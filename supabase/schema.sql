@@ -219,6 +219,16 @@ CREATE INDEX idx_staff_pins_pin ON staff_pins(pin);
 ALTER TABLE staff_pins ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow all" ON staff_pins FOR ALL USING (true);
 
+-- APP SETTINGS (single source of truth for admin-set values like the SSP/USD exchange rate)
+CREATE TABLE settings (
+  key TEXT PRIMARY KEY,
+  value JSONB NOT NULL DEFAULT '{}'::jsonb,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all" ON settings FOR ALL USING (true);
+
 -- Seed default PINs
 INSERT INTO staff (id, first_name, last_name, role, phone, email, hire_date, salary) VALUES
   ('1', 'Chidinma', 'Eze', 'admin', '08012345678', 'chidinma@globalpharmacy.com', '2024-01-15', 180000),

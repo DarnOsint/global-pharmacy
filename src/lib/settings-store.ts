@@ -14,6 +14,7 @@ export interface StoreSettings {
   expiryWarningDays: number;
   exchangeRate: number;
   categories: string[];
+  updatedAt: number;
 }
 
 interface SettingsStore extends StoreSettings {
@@ -49,6 +50,7 @@ const defaultSettings: StoreSettings = {
   expiryWarningDays: 90,
   exchangeRate: 1550,
   categories: defaultCategories,
+  updatedAt: 0,
 };
 
 export const useSettingsStore = create<SettingsStore>()(
@@ -56,7 +58,7 @@ export const useSettingsStore = create<SettingsStore>()(
     (set) => ({
       ...defaultSettings,
       updateSettings: (settings) =>
-        set((state) => ({ ...state, ...settings })),
+        set((state) => ({ ...state, ...settings, updatedAt: Date.now() })),
       setLogo: (base64) => set({ logoBase64: base64 }),
       clearLogo: () => set({ logoBase64: null }),
       addCategory: (name) =>

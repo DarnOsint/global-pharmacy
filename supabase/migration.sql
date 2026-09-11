@@ -35,3 +35,19 @@ BEGIN
     CREATE POLICY "Allow all" ON budgets FOR ALL USING (true);
   END IF;
 END $$;
+
+-- App settings (synced admin values such as the SSP/USD exchange rate)
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY,
+  value JSONB NOT NULL DEFAULT '{}'::jsonb,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'settings') THEN
+    CREATE POLICY "Allow all" ON settings FOR ALL USING (true);
+  END IF;
+END $$;

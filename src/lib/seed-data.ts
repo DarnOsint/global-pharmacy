@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+import { v5 as uuidv5 } from 'uuid';
 import { db } from '@/lib/db';
 import { syncDb } from '@/lib/sync';
 import type { Currency } from '@/lib/utils';
@@ -6,6 +6,15 @@ import type { Currency } from '@/lib/utils';
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const ADMIN_STAFF_ID = 'a0000000-0000-0000-0000-000000000001';
+
+const LEGACY_NS = 'a0000000-0000-4000-8000-0000000000aa';
+
+// Stable name-based UUID so every device maps the same legacy short id
+// (e.g. "p1") to the SAME uuid. Random uuids per device caused duplicate
+// rows to accumulate on different machines.
+export function deterministicLegacyUuid(legacyId: string): string {
+  return uuidv5(`global-pharmacy:${legacyId}`, LEGACY_NS);
+}
 
 const P1 = '00000000-0000-4000-8000-000000000001';
 const P2 = '00000000-0000-4000-8000-000000000002';
@@ -15,6 +24,10 @@ const P5 = '00000000-0000-4000-8000-000000000005';
 const P6 = '00000000-0000-4000-8000-000000000006';
 const P7 = '00000000-0000-4000-8000-000000000007';
 const P8 = '00000000-0000-4000-8000-000000000008';
+
+// Canonical deterministic product ids used by the seed set. Used by the
+// reconciliation pass to prefer the canonical copy when deduplicating.
+export const SEED_PRODUCT_IDS = [P1, P2, P3, P4, P5, P6, P7, P8];
 
 const SUP1 = '10000000-0000-4000-8000-000000000001';
 const SUP2 = '10000000-0000-4000-8000-000000000002';
@@ -70,7 +83,7 @@ export async function migrateLegacyIds() {
     let changed = false;
     for (const row of rows) {
       if (typeof row.id === 'string' && !UUID_RE.test(row.id) && !map[row.id]) {
-        map[row.id] = uuidv4();
+        map[row.id] = deterministicLegacyUuid(`${table}:${row.id}`);
         row.id = map[row.id];
         changed = true;
       }

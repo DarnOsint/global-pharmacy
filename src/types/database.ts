@@ -150,6 +150,12 @@ export interface Budget {
   created_at: string;
 }
 
+export interface AppSettingsRow {
+  key: string;
+  value: { [k: string]: unknown };
+  updated_at: string;
+}
+
 export type PaymentMethod = 'cash' | 'card' | 'transfer' | 'credit';
 export type UserRole = 'admin' | 'pharmacist' | 'cashier' | 'store_manager';
 
@@ -167,6 +173,7 @@ export interface Database {
       staff: { Row: Staff; Insert: Partial<Staff>; Update: Partial<Staff> };
       payroll: { Row: Payroll; Insert: Partial<Payroll>; Update: Partial<Payroll> };
       budgets: { Row: Budget; Insert: Partial<Budget>; Update: Partial<Budget> };
+      settings: { Row: AppSettingsRow; Insert: Partial<AppSettingsRow>; Update: Partial<AppSettingsRow> };
     };
     Enums: {
       user_role: UserRole;

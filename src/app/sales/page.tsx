@@ -44,6 +44,17 @@ export default function SalesPage() {
   const [editSale, setEditSale] = useState<Partial<Sale>>({});
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
+  const [addCurrency, setAddCurrency] = useState<Currency>('SSP');
+  const [addSubtotal, setAddSubtotal] = useState(0);
+  const [addDiscount, setAddDiscount] = useState(0);
+
+  const addTotal = Math.max(0, addSubtotal - addDiscount);
+  const addOther: Currency = addCurrency === 'SSP' ? 'USD' : 'SSP';
+  const addEquivalent = addTotal > 0 ? formatCurrencyPair(addTotal, addCurrency, settings.exchangeRate) : '';
+  const editCurrency: Currency = editSale.currency || 'SSP';
+  const editOther: Currency = editCurrency === 'SSP' ? 'USD' : 'SSP';
+  const editTotal = Math.max(0, (editSale.subtotal || 0) - (editSale.discount || 0));
+  const editEquivalent = editTotal > 0 ? `${formatCurrencyPair(editTotal, editCurrency, settings.exchangeRate)}` : '';
 
   const loadSales = useCallback(async () => {
     await seedOfflineData();
@@ -52,7 +63,10 @@ export default function SalesPage() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { loadSales(); }, [loadSales]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadSales();
+  }, [loadSales]);
 
   const filtered = sales.filter(s =>
     s.invoice_number.toLowerCase().includes(search.toLowerCase()) ||
@@ -77,19 +91,20 @@ export default function SalesPage() {
       invoice_number: `GS-${Date.now().toString().slice(-8)}`,
       customer_id: null,
       user_id: user?.id || '',
-      subtotal: Number((form.querySelector('#subtotal') as HTMLInputElement).value),
-      discount: Number((form.querySelector('#discount') as HTMLInputElement)?.value || 0),
+      subtotal: addSubtotal,
+      discount: addDiscount,
       tax: 0,
-      total: 0,
+      total: addTotal,
       payment_method: (form.querySelector('#payment') as HTMLSelectElement).value as Sale['payment_method'],
       status: 'completed' as const,
-      currency: (form.querySelector('#currency') as HTMLSelectElement).value as Currency,
+      currency: addCurrency,
       notes: (form.querySelector('#customer') as HTMLInputElement).value,
     };
-    data.total = data.subtotal - data.discount;
     await addSale(data, []);
     await refreshCount();
     setShowAdd(false);
+    setAddSubtotal(0);
+    setAddDiscount(0);
     await loadSales();
   };
 
@@ -109,7 +124,7 @@ export default function SalesPage() {
             <h1 className="text-2xl font-bold">Sales</h1>
             <p className="text-sm text-muted-foreground">Manage all sales transactions</p>
           </div>
-          <Button onClick={() => setShowAdd(true)}><Plus className="w-4 h-4 mr-2" /> New Sale</Button>
+          <Button onClick={() => { setShowAdd(true); setAddCurrency('SSP'); setAddSubtotal(0); setAddDiscount(0); }}><Plus className="w-4 h-4 mr-2" /> New Sale</Button>
         </div>
 
         <Card>
@@ -138,7 +153,7 @@ export default function SalesPage() {
                   <tr key={sale.id} className="border-b border-border hover:bg-muted/30">
                     <td className="p-3 font-mono text-xs font-medium">{sale.invoice_number}</td>
                     <td className="p-3 font-medium">{sale.notes || 'Walk-in'}</td>
-                    <td className="p-3 text-right font-semibold">{formatCurrencyPair(sale.total, (sale as any).currency || 'SSP', settings.exchangeRate)}</td>
+                    <td className="p-3 text-right font-semibold">{formatCurrencyPair(sale.total, sale.currency || 'SSP', settings.exchangeRate)}</td>
                     <td className="p-3"><Badge variant="default">{sale.payment_method}</Badge></td>
                     <td className="p-3"><Badge variant={sale.status === 'completed' ? 'success' : sale.status === 'returned' ? 'danger' : 'warning'}>{sale.status}</Badge></td>
                     <td className="p-3 text-muted-foreground">{formatDate(sale.created_at)}</td>
@@ -164,10 +179,17 @@ export default function SalesPage() {
           <form className="space-y-4" onSubmit={handleAdd}>
             <div className="grid grid-cols-2 gap-4">
               <div><label className="block text-sm font-medium text-foreground mb-1">Customer Name</label><input type="text" id="customer" required className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" /></div>
-              <div><label className="block text-sm font-medium text-foreground mb-1">Currency</label><select id="currency" className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">{currencies.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}</select></div>
-              <div><label className="block text-sm font-medium text-foreground mb-1">Subtotal</label><input type="number" id="subtotal" step="0.01" required className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" /></div>
-              <div><label className="block text-sm font-medium text-foreground mb-1">Discount</label><input type="number" id="discount" step="0.01" defaultValue={0} className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" /></div>
-              <div><label className="block text-sm font-medium text-foreground mb-1">Payment Method</label><select id="payment" className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">{paymentMethods.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}</select></div>
+              <div><label className="block text-sm font-medium text-foreground mb-1">Currency</label><select value={addCurrency} onChange={e => setAddCurrency(e.target.value as Currency)} className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">{currencies.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}</select></div>
+              <div><label className="block text-sm font-medium text-foreground mb-1">Subtotal ({addCurrency})</label><input type="number" min={0} step="0.01" required value={addSubtotal} onChange={e => setAddSubtotal(Number(e.target.value))} className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" /></div>
+              <div><label className="block text-sm font-medium text-foreground mb-1">Discount ({addCurrency})</label><input type="number" min={0} step="0.01" value={addDiscount} onChange={e => setAddDiscount(Number(e.target.value))} className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" /></div>
+              <div className="col-span-2"><label className="block text-sm font-medium text-foreground mb-1">Payment Method</label><select id="payment" className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">{paymentMethods.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}</select></div>
+            </div>
+            <div className="rounded-lg bg-muted/50 border border-border p-3 text-sm space-y-1">
+              <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span className="font-medium">{formatCurrency(addSubtotal, addCurrency)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Discount</span><span className="font-medium">- {formatCurrency(addDiscount, addCurrency)}</span></div>
+              <div className="flex justify-between font-bold pt-1 border-t border-border"><span>Total {addCurrency}</span><span>{formatCurrency(addTotal, addCurrency)}</span></div>
+              {addEquivalent && <div className="flex justify-between text-xs text-muted-foreground"><span>≈ {addOther}</span><span>{addEquivalent}</span></div>}
+              <p className="text-[10px] text-muted-foreground text-center pt-1">Rate: 1 USD = SSP {settings.exchangeRate.toLocaleString()}</p>
             </div>
             <div className="flex justify-end gap-3"><Button variant="ghost" type="button" onClick={() => setShowAdd(false)}>Cancel</Button><Button type="submit">Save Sale</Button></div>
           </form>
@@ -177,11 +199,17 @@ export default function SalesPage() {
         <Modal open={showEdit} onClose={() => setShowEdit(false)} title={`Edit Sale — ${editSale.invoice_number}`} size="md">
           <form className="space-y-4" onSubmit={saveEdit}>
             <div className="grid grid-cols-2 gap-4">
-              <div><label className="block text-sm font-medium text-foreground mb-1">Customer</label><input type="text" value={(editSale as any).notes || ''} onChange={e => setEditSale({ ...editSale, notes: e.target.value })} className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" /></div>
+              <div><label className="block text-sm font-medium text-foreground mb-1">Customer</label><input type="text" value={editSale.notes || ''} onChange={e => setEditSale({ ...editSale, notes: e.target.value })} className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" /></div>
               <div><label className="block text-sm font-medium text-foreground mb-1">Payment</label><select value={editSale.payment_method || 'cash'} onChange={e => setEditSale({ ...editSale, payment_method: e.target.value as Sale['payment_method'] })} className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">{paymentMethods.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}</select></div>
-              <div><label className="block text-sm font-medium text-foreground mb-1">Subtotal</label><input type="number" step="0.01" value={editSale.subtotal || 0} onChange={e => setEditSale({ ...editSale, subtotal: Number(e.target.value), total: Number(e.target.value) - (editSale.discount || 0) })} className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" /></div>
-              <div><label className="block text-sm font-medium text-foreground mb-1">Discount</label><input type="number" step="0.01" value={editSale.discount || 0} onChange={e => setEditSale({ ...editSale, discount: Number(e.target.value), total: (editSale.subtotal || 0) - Number(e.target.value) })} className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" /></div>
+              <div><label className="block text-sm font-medium text-foreground mb-1">Currency</label><select value={editCurrency} onChange={e => setEditSale({ ...editSale, currency: e.target.value as Currency })} className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">{currencies.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}</select></div>
               <div><label className="block text-sm font-medium text-foreground mb-1">Status</label><select value={editSale.status || 'completed'} onChange={e => setEditSale({ ...editSale, status: e.target.value as Sale['status'] })} className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary">{statuses.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}</select></div>
+              <div><label className="block text-sm font-medium text-foreground mb-1">Subtotal ({editCurrency})</label><input type="number" step="0.01" value={editSale.subtotal || 0} onChange={e => setEditSale({ ...editSale, subtotal: Number(e.target.value), total: Number(e.target.value) - (editSale.discount || 0) })} className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" /></div>
+              <div><label className="block text-sm font-medium text-foreground mb-1">Discount ({editCurrency})</label><input type="number" step="0.01" value={editSale.discount || 0} onChange={e => setEditSale({ ...editSale, discount: Number(e.target.value), total: (editSale.subtotal || 0) - Number(e.target.value) })} className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" /></div>
+            </div>
+            <div className="rounded-lg bg-muted/50 border border-border p-3 text-sm space-y-1">
+              <div className="flex justify-between"><span className="text-muted-foreground">Total {editCurrency}</span><span className="font-bold">{formatCurrency(editTotal, editCurrency)}</span></div>
+              {editEquivalent && <div className="flex justify-between text-xs text-muted-foreground"><span>≈ {editOther}</span><span>{editEquivalent}</span></div>}
+              <p className="text-[10px] text-muted-foreground text-center pt-1">Rate: 1 USD = SSP {settings.exchangeRate.toLocaleString()}</p>
             </div>
             <div className="flex justify-end gap-3"><Button variant="ghost" type="button" onClick={() => setShowEdit(false)}>Cancel</Button><Button type="submit">Save Changes</Button></div>
           </form>
@@ -192,9 +220,9 @@ export default function SalesPage() {
           {selected && (
             <div className="space-y-4 text-sm">
               <div className="grid grid-cols-2 gap-4">
-                <div><p className="text-muted-foreground">Customer</p><p className="font-medium">{(selected as any).notes || 'Walk-in'}</p></div>
+                <div><p className="text-muted-foreground">Customer</p><p className="font-medium">{selected.notes || 'Walk-in'}</p></div>
                 <div><p className="text-muted-foreground">Date</p><p className="font-medium">{formatDate(selected.created_at)}</p></div>
-                <div><p className="text-muted-foreground">Total</p><p className="font-bold text-primary">{formatCurrency(selected.total, (selected as any).currency || 'SSP')}</p></div>
+                <div><p className="text-muted-foreground">Total</p><p className="font-bold text-primary">{formatCurrency(selected.total, selected.currency || 'SSP')}</p></div>
                 <div><p className="text-muted-foreground">Payment</p><Badge variant="default">{selected.payment_method}</Badge></div>
                 <div><p className="text-muted-foreground">Status</p><Badge variant={selected.status === 'completed' ? 'success' : 'danger'}>{selected.status}</Badge></div>
               </div>

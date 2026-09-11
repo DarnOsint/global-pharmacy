@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useSettingsStore } from '@/lib/settings-store';
 import { useAuthStore } from '@/lib/auth';
-import { Settings, Store, Database, Bell, Shield, Upload, X, Image, User, Save, AlertTriangle, DollarSign, Tag, Plus, Trash2, Download, Info, Pill } from 'lucide-react';
+import { Settings, Store, Bell, Shield, Upload, X, Image, User, Save, AlertTriangle, DollarSign, Tag, Plus, Download, Info, Pill } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { getAllProducts, getAllSales, getAllExpenses, getAllPurchases, getAllStaff } from '@/lib/offline-db';
 import { CybervilleCredit } from '@/components/cyberville-brand';
@@ -110,7 +110,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <AuthGuard>
+    <AuthGuard allowedRoles={['admin']}>
       <AppShell>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
