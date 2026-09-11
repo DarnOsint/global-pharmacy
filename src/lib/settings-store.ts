@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { createIdbStorage } from '@/lib/idb-storage';
 
 export interface StoreSettings {
   storeName: string;
@@ -75,6 +76,7 @@ export const useSettingsStore = create<SettingsStore>()(
     }),
     {
       name: 'global-pharmacy-settings',
+      storage: createJSONStorage(() => createIdbStorage()),
     }
   )
 );
