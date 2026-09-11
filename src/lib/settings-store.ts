@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { createIdbStorage } from '@/lib/idb-storage';
+import { logSettingsChange } from '@/lib/audit';
 
 export interface RoleConfig {
   id: string;
@@ -79,9 +80,25 @@ export const useSettingsStore = create<SettingsStore>()(
     (set) => ({
       ...defaultSettings,
       updateSettings: (settings) =>
-        set((state) => ({ ...state, ...settings, updatedAt: Date.now() })),
-      setLogo: (base64) => set({ logoBase64: base64, updatedAt: Date.now() }),
-      clearLogo: () => set({ logoBase64: null, updatedAt: Date.now() }),
+        set((state) => {
+          const changed = Object.fromEntries(
+            Object.entries(settings).filter(([k, v]) => JSON.stringify(v) !== JSON.stringify((state as unknown as Record<string, unknown>)[k]))
+          );
+          const next = { ...state, ...settings, updatedAt: Date.now() };
+          if (Object.keys(changed).length > 0) {
+            const oldSnapshot = Object.fromEntries(Object.keys(changed).map((k) => [k, (state as unknown as Record<string, unknown>)[k]]));
+            logSettingsChange(oldSnapshot, changed);
+          }
+          return next;
+        }),
+      setLogo: (base64) => set((state) => {
+        logSettingsChange({ logoBase64: state.logoBase64 }, { logoBase64: base64 });
+        return { logoBase64: base64, updatedAt: Date.now() };
+      }),
+      clearLogo: () => set((state) => {
+        logSettingsChange({ logoBase64: state.logoBase64 }, { logoBase64: null });
+        return { logoBase64: null, updatedAt: Date.now() };
+      }),
       addCategory: (name) =>
         set((state) => {
           const slug = name.toLowerCase().trim();
@@ -96,20 +113,30 @@ export const useSettingsStore = create<SettingsStore>()(
       addRole: (role) =>
         set((state) => {
           if (state.roles.some((r) => r.id === role.id)) return state;
+          logSettingsChange({ roles: state.roles }, { roles: [...state.roles, role] });
           return { ...state, roles: [...state.roles, role], updatedAt: Date.now() };
         }),
       updateRole: (id, patch) =>
-        set((state) => ({
-          ...state,
-          roles: state.roles.map((r) => (r.id === id ? { ...r, ...patch } : r)),
-          updatedAt: Date.now(),
-        })),
+        set((state) => {
+          logSettingsChange(
+            { roles: state.roles },
+            { roles: state.roles.map((r) => (r.id === id ? { ...r, ...patch } : r)) }
+          );
+          return {
+            ...state,
+            roles: state.roles.map((r) => (r.id === id ? { ...r, ...patch } : r)),
+            updatedAt: Date.now(),
+          };
+        }),
       removeRole: (id) =>
-        set((state) => ({
-          ...state,
-          roles: state.roles.filter((r) => r.id !== id),
-          updatedAt: Date.now(),
-        })),
+        set((state) => {
+          logSettingsChange({ roles: state.roles }, { roles: state.roles.filter((r) => r.id !== id) });
+          return {
+            ...state,
+            roles: state.roles.filter((r) => r.id !== id),
+            updatedAt: Date.now(),
+          };
+        }),
     }),
     {
       name: 'global-pharmacy-settings',

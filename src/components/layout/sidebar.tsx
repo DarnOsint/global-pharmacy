@@ -24,20 +24,23 @@ interface NavItem {
   hasAlert?: boolean;
 }
 
+const ALL_ROLES = ['admin', 'pharmacist', 'cashier', 'general_manager'];
+
 const navItems: NavItem[] = [
-  { href: '/pos', label: 'POS', icon: ScanLine, roles: ['pharmacist'] },
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin'] },
-  { href: '/inventory', label: 'Inventory', icon: Package, roles: ['cashier', 'general_manager', 'admin'] },
-  { href: '/sales', label: 'Sales', icon: ShoppingCart, roles: ['admin'] },
-  { href: '/invoices', label: 'Invoices', icon: FileText, roles: ['admin'] },
-  { href: '/purchases', label: 'Purchases', icon: Receipt, roles: ['cashier', 'general_manager', 'admin'] },
-  { href: '/suppliers', label: 'Suppliers', icon: Truck, roles: ['cashier', 'general_manager', 'admin'] },
-  { href: '/customers', label: 'Customers', icon: UserCheck, roles: ['admin'] },
-  { href: '/expenses', label: 'Expenses', icon: CreditCard, roles: ['admin'] },
-  { href: '/hr', label: 'HR & Payroll', icon: Users, roles: ['admin'] },
-  { href: '/alerts', label: 'Expiry Alerts', icon: AlertTriangle, roles: ['cashier', 'general_manager', 'admin'], hasAlert: true },
-  { href: '/reports', label: 'Reports', icon: BarChart3, roles: ['admin'] },
-  { href: '/settings', label: 'Settings', icon: Settings, roles: ['admin'] },
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ALL_ROLES },
+  { href: '/pos', label: 'POS', icon: ScanLine, roles: ALL_ROLES },
+  { href: '/inventory', label: 'Inventory', icon: Package, roles: ALL_ROLES },
+  { href: '/sales', label: 'Sales', icon: ShoppingCart, roles: ALL_ROLES },
+  { href: '/invoices', label: 'Invoices', icon: FileText, roles: ALL_ROLES },
+  { href: '/purchases', label: 'Purchases', icon: Receipt, roles: ALL_ROLES },
+  { href: '/suppliers', label: 'Suppliers', icon: Truck, roles: ALL_ROLES },
+  { href: '/customers', label: 'Customers', icon: UserCheck, roles: ALL_ROLES },
+  { href: '/expenses', label: 'Expenses', icon: CreditCard, roles: ALL_ROLES },
+  { href: '/hr', label: 'HR & Payroll', icon: Users, roles: ALL_ROLES },
+  { href: '/alerts', label: 'Expiry Alerts', icon: AlertTriangle, roles: ALL_ROLES, hasAlert: true },
+  { href: '/reports', label: 'Reports', icon: BarChart3, roles: ALL_ROLES },
+  { href: '/settings', label: 'Settings', icon: Settings, roles: ALL_ROLES },
+  { href: '/audit-log', label: 'Audit Log', icon: FileText, roles: ['admin', 'general_manager'] },
 ];
 
 const roleBadge: Record<string, string> = {

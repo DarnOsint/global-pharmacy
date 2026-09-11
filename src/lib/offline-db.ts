@@ -1,7 +1,8 @@
 import { db } from '@/lib/db';
 import { queueMutation } from '@/lib/sync';
-import type { Product, Supplier, Customer, Sale, SaleItem, Purchase, PurchaseItem, Expense, Staff, Payroll, Budget } from '@/types/database';
+import type { Product, Supplier, Customer, Sale, SaleItem, Purchase, PurchaseItem, Expense, Staff, Payroll, Budget, AuditLog } from '@/types/database';
 import { generateId } from '@/lib/utils';
+import { logCreate, logUpdate, logDelete, logSale, logPurchase } from '@/lib/audit';
 
 function now() { return new Date().toISOString(); }
 
@@ -14,18 +15,27 @@ export async function addProduct(data: Omit<Product, 'id' | 'created_at' | 'upda
   const product: Product = { ...data, id: generateId(), created_at: now(), updated_at: now() };
   await db.products.add(product);
   await queueMutation('products', 'create', product, product.id);
+  await logCreate('product', product.id, product.name, product as unknown as Record<string, unknown>);
   return product;
 }
 
 export async function updateProduct(id: string, data: Partial<Product>): Promise<void> {
   const updates = { ...data, updated_at: now() };
+  const before = await db.products.get(id);
   await db.products.update(id, updates);
   await queueMutation('products', 'update', { id, ...updates }, id);
+  if (before) {
+    await logUpdate('product', id, before.name, before as unknown as Record<string, unknown>, updates as unknown as Record<string, unknown>);
+  }
 }
 
 export async function deleteProduct(id: string): Promise<void> {
+  const before = await db.products.get(id);
   await db.products.delete(id);
   await queueMutation('products', 'delete', { id }, id);
+  if (before) {
+    await logDelete('product', id, before.name, before as unknown as Record<string, unknown>);
+  }
 }
 
 // ─── Suppliers ──────────────────────────────────────────
@@ -37,17 +47,26 @@ export async function addSupplier(data: Omit<Supplier, 'id' | 'created_at'>): Pr
   const supplier: Supplier = { ...data, id: generateId(), created_at: now() };
   await db.suppliers.add(supplier);
   await queueMutation('suppliers', 'create', supplier, supplier.id);
+  await logCreate('supplier', supplier.id, supplier.name, supplier as unknown as Record<string, unknown>);
   return supplier;
 }
 
 export async function updateSupplier(id: string, data: Partial<Supplier>): Promise<void> {
+  const before = await db.suppliers.get(id);
   await db.suppliers.update(id, data);
   await queueMutation('suppliers', 'update', { id, ...data }, id);
+  if (before) {
+    await logUpdate('supplier', id, before.name, before as unknown as Record<string, unknown>, data as unknown as Record<string, unknown>);
+  }
 }
 
 export async function deleteSupplier(id: string): Promise<void> {
+  const before = await db.suppliers.get(id);
   await db.suppliers.delete(id);
   await queueMutation('suppliers', 'delete', { id }, id);
+  if (before) {
+    await logDelete('supplier', id, before.name, before as unknown as Record<string, unknown>);
+  }
 }
 
 // ─── Customers ──────────────────────────────────────────
@@ -59,17 +78,26 @@ export async function addCustomer(data: Omit<Customer, 'id' | 'created_at'>): Pr
   const customer: Customer = { ...data, id: generateId(), created_at: now() };
   await db.customers.add(customer);
   await queueMutation('customers', 'create', customer, customer.id);
+  await logCreate('customer', customer.id, customer.name, customer as unknown as Record<string, unknown>);
   return customer;
 }
 
 export async function updateCustomer(id: string, data: Partial<Customer>): Promise<void> {
+  const before = await db.customers.get(id);
   await db.customers.update(id, data);
   await queueMutation('customers', 'update', { id, ...data }, id);
+  if (before) {
+    await logUpdate('customer', id, before.name, before as unknown as Record<string, unknown>, data as unknown as Record<string, unknown>);
+  }
 }
 
 export async function deleteCustomer(id: string): Promise<void> {
+  const before = await db.customers.get(id);
   await db.customers.delete(id);
   await queueMutation('customers', 'delete', { id }, id);
+  if (before) {
+    await logDelete('customer', id, before.name, before as unknown as Record<string, unknown>);
+  }
 }
 
 // ─── Sales ──────────────────────────────────────────────
@@ -87,6 +115,7 @@ export async function addSale(sale: Omit<Sale, 'id' | 'created_at'>, items: Omit
   for (const item of fullItems) {
     await queueMutation('sale_items', 'create', item, item.id);
   }
+  await logSale(fullSale.invoice_number, fullSale.total, fullSale.currency, fullItems.length);
   return fullSale;
 }
 
@@ -120,6 +149,7 @@ export async function addPurchase(purchase: Omit<Purchase, 'id' | 'created_at'>,
   for (const item of fullItems) {
     await queueMutation('purchase_items', 'create', item, item.id);
   }
+  await logPurchase(fullPurchase.invoice_number, fullPurchase.total, fullPurchase.currency);
   return fullPurchase;
 }
 
@@ -147,17 +177,26 @@ export async function addExpense(data: Omit<Expense, 'id' | 'created_at'>): Prom
   const expense: Expense = { ...data, id: generateId(), created_at: now() };
   await db.expenses.add(expense);
   await queueMutation('expenses', 'create', expense, expense.id);
+  await logCreate('expense', expense.id, expense.description || expense.category, expense as unknown as Record<string, unknown>);
   return expense;
 }
 
 export async function updateExpense(id: string, data: Partial<Expense>): Promise<void> {
+  const before = await db.expenses.get(id);
   await db.expenses.update(id, data);
   await queueMutation('expenses', 'update', { id, ...data }, id);
+  if (before) {
+    await logUpdate('expense', id, before.description || before.category, before as unknown as Record<string, unknown>, data as unknown as Record<string, unknown>);
+  }
 }
 
 export async function deleteExpense(id: string): Promise<void> {
+  const before = await db.expenses.get(id);
   await db.expenses.delete(id);
   await queueMutation('expenses', 'delete', { id }, id);
+  if (before) {
+    await logDelete('expense', id, before.description || before.category, before as unknown as Record<string, unknown>);
+  }
 }
 
 // ─── Staff ──────────────────────────────────────────────
@@ -169,17 +208,26 @@ export async function addStaff(data: Omit<Staff, 'id' | 'created_at'>): Promise<
   const staff: Staff = { ...data, id: generateId(), created_at: now() };
   await db.staff.add(staff);
   await queueMutation('staff', 'create', staff, staff.id);
+  await logCreate('staff member', staff.id, `${staff.first_name} ${staff.last_name}`, staff as unknown as Record<string, unknown>);
   return staff;
 }
 
 export async function updateStaff(id: string, data: Partial<Staff>): Promise<void> {
+  const before = await db.staff.get(id);
   await db.staff.update(id, data);
   await queueMutation('staff', 'update', { id, ...data }, id);
+  if (before) {
+    await logUpdate('staff member', id, `${before.first_name} ${before.last_name}`, before as unknown as Record<string, unknown>, data as unknown as Record<string, unknown>);
+  }
 }
 
 export async function deleteStaff(id: string): Promise<void> {
+  const before = await db.staff.get(id);
   await db.staff.delete(id);
   await queueMutation('staff', 'delete', { id }, id);
+  if (before) {
+    await logDelete('staff member', id, `${before.first_name} ${before.last_name}`, before as unknown as Record<string, unknown>);
+  }
 }
 
 // ─── Payroll ────────────────────────────────────────────
@@ -191,12 +239,19 @@ export async function addPayroll(data: Omit<Payroll, 'id' | 'created_at'>): Prom
   const payroll: Payroll = { ...data, id: generateId(), created_at: now() };
   await db.payroll.add(payroll);
   await queueMutation('payroll', 'create', payroll, payroll.id);
+  const staff = await db.staff.get(data.staff_id);
+  await logCreate('payroll', payroll.id, `Payroll for ${staff ? staff.first_name + ' ' + staff.last_name : data.staff_id}`, payroll as unknown as Record<string, unknown>);
   return payroll;
 }
 
 export async function updatePayroll(id: string, data: Partial<Payroll>): Promise<void> {
+  const before = await db.payroll.get(id);
   await db.payroll.update(id, data);
   await queueMutation('payroll', 'update', { id, ...data }, id);
+  if (before) {
+    const staff = await db.staff.get(before.staff_id);
+    await logUpdate('payroll', id, `Payroll for ${staff ? staff.first_name + ' ' + staff.last_name : before.staff_id}`, before as unknown as Record<string, unknown>, data as unknown as Record<string, unknown>);
+  }
 }
 
 // ─── Sale Items ─────────────────────────────────────────
@@ -249,6 +304,12 @@ export async function updateBudget(id: string, data: Partial<Budget>): Promise<v
 export async function deleteBudget(id: string): Promise<void> {
   await db.budgets.delete(id);
   await queueMutation('budgets', 'delete', { id }, id);
+}
+
+// ─── Audit Logs ─────────────────────────────────────────
+export async function getAllAuditLogs(): Promise<AuditLog[]> {
+  const logs = await db.auditLogs.orderBy('created_at').reverse().toArray();
+  return logs.slice(0, 1000);
 }
 
 // ─── Query helpers ──────────────────────────────────────

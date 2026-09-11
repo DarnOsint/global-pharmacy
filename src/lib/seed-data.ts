@@ -273,11 +273,12 @@ export async function seedOfflineData() {
   ]);
 
   await db.staff.bulkAdd([
-    { id: 'a0000000-0000-0000-0000-000000000001', first_name: 'Clara', last_name: 'Evelino Modi', role: 'admin', phone: '+211920123456', email: 'clara@globalpharmacy.ss', hire_date: '2024-01-15', salary: 450000, is_active: true, created_at: new Date().toISOString() },
-    { id: 'a0000000-0000-0000-0000-000000000002', first_name: 'Nyamal', last_name: 'Kuol', role: 'pharmacist', phone: '+211921234567', email: 'nyamal@globalpharmacy.ss', hire_date: '2024-03-20', salary: 350000, is_active: true, created_at: new Date().toISOString() },
-    { id: 'a0000000-0000-0000-0000-000000000003', first_name: 'Bol', last_name: 'Mawut', role: 'pharmacist', phone: '+211922345678', email: 'bol@globalpharmacy.ss', hire_date: '2024-06-10', salary: 350000, is_active: true, created_at: new Date().toISOString() },
-    { id: 'a0000000-0000-0000-0000-000000000004', first_name: 'Akello', last_name: 'James', role: 'cashier', phone: '+211923456789', email: 'akello@globalpharmacy.ss', hire_date: '2025-01-05', salary: 200000, is_active: true, created_at: new Date().toISOString() },
-    { id: 'a0000000-0000-0000-0000-000000000005', first_name: 'Kur', last_name: 'Lual', role: 'general_manager', phone: '+211924567890', email: 'kur@globalpharmacy.ss', hire_date: '2025-06-15', salary: 280000, is_active: true, created_at: new Date().toISOString() },
+    { id: 'a0000000-0000-0000-0000-000000000001', first_name: 'Clara', last_name: 'Evelino Modi', role: 'admin', phone: '+211928000601', email: 'clara@globalpharmacy.ss', hire_date: '2024-01-15', salary: 300000, is_active: true, created_at: new Date().toISOString() },
+    { id: 'a0000000-0000-0000-0000-000000000002', first_name: 'Dr. Denis', last_name: 'Sebit', role: 'pharmacist', phone: '+211915747474', email: 'denis@globalpharmacy.ss', hire_date: '2024-03-20', salary: 300000, is_active: true, created_at: new Date().toISOString() },
+    { id: 'a0000000-0000-0000-0000-000000000003', first_name: 'Dr. Jasinta', last_name: 'Robert', role: 'pharmacist', phone: '+211925687772', email: 'jasinta@globalpharmacy.ss', hire_date: '2024-06-10', salary: 300000, is_active: true, created_at: new Date().toISOString() },
+    { id: 'a0000000-0000-0000-0000-000000000004', first_name: 'Mr. Emmanuel', last_name: 'Morbe', role: 'cashier', phone: '+211929420661', email: 'emmanuel@globalpharmacy.ss', hire_date: '2025-01-05', salary: 200000, is_active: true, created_at: new Date().toISOString() },
+    { id: 'a0000000-0000-0000-0000-000000000005', first_name: 'Dr. Mary', last_name: 'Evelino', role: 'general_manager', phone: '+256778551051', email: 'mary@globalpharmacy.ss', hire_date: '2025-06-15', salary: 280000, is_active: true, created_at: new Date().toISOString() },
+    { id: 'a0000000-0000-0000-0000-000000000006', first_name: 'Dr. Bortel', last_name: 'Ohesa', role: 'pharmacist', phone: '+211920123456', email: 'bortel@globalpharmacy.ss', hire_date: '2026-01-01', salary: 250000, is_active: true, created_at: new Date().toISOString() },
   ]);
 
   await db.payroll.bulkAdd([

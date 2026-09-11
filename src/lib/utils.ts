@@ -49,6 +49,16 @@ export function formatDate(dateStr: string): string {
   });
 }
 
+export function formatDateTime(dateStr: string): string {
+  return new Date(dateStr).toLocaleString('en-NG', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 export function daysUntilExpiry(expiryDate: string): number {
   const now = new Date();
   const expiry = new Date(expiryDate);

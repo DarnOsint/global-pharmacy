@@ -2,6 +2,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { logLogin, logLogout } from '@/lib/audit';
 
 export interface AuthUser {
   id: string;
@@ -26,8 +27,15 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
       hasHydrated: false,
-      login: (user) => set({ user, isAuthenticated: true }),
-      logout: () => set({ user: null, isAuthenticated: false }),
+      login: (user) => {
+        logLogin(user.first_name, user.last_name, user.role);
+        set({ user, isAuthenticated: true });
+      },
+      logout: () => {
+        const current = useAuthStore.getState().user;
+        if (current) logLogout(current.first_name, current.last_name, current.role);
+        set({ user: null, isAuthenticated: false });
+      },
       setHasHydrated: (value) => set({ hasHydrated: value }),
     }),
     {

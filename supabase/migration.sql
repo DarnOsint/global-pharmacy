@@ -59,3 +59,55 @@ BEGIN
     ALTER TYPE user_role RENAME VALUE 'store_manager' TO 'general_manager';
   END IF;
 END $$;
+-- AUDIT LOGS (detailed record of who did what, when, what changed, and the effect)
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  staff_id UUID NOT NULL REFERENCES staff(id) ON DELETE CASCADE,
+  staff_name TEXT NOT NULL DEFAULT '',
+  staff_role TEXT NOT NULL DEFAULT '',
+  action TEXT NOT NULL,
+  entity_type TEXT NOT NULL DEFAULT '',
+  entity_id TEXT NOT NULL DEFAULT '',
+  entity_name TEXT NOT NULL DEFAULT '',
+  description TEXT NOT NULL,
+  old_values JSONB,
+  new_values JSONB,
+  metadata JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_staff ON audit_logs(staff_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_entity ON audit_logs(entity_type, entity_id);
+ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'audit_logs') THEN
+    CREATE POLICY "Allow all" ON audit_logs FOR ALL USING (true);
+  END IF;
+END $$;
+
+-- Re-seed the authoritative HR staff records and PINs
+INSERT INTO staff (id, first_name, last_name, role, phone, email, hire_date, salary) VALUES
+  ('a0000000-0000-0000-0000-000000000001', 'Clara', 'Evelino Modi', 'admin', '+211928000601', 'clara@globalpharmacy.ss', '2024-01-15', 300000),
+  ('a0000000-0000-0000-0000-000000000002', 'Dr. Denis', 'Sebit', 'pharmacist', '+211915747474', 'denis@globalpharmacy.ss', '2024-03-20', 300000),
+  ('a0000000-0000-0000-0000-000000000003', 'Dr. Jasinta', 'Robert', 'pharmacist', '+211925687772', 'jasinta@globalpharmacy.ss', '2024-06-10', 300000),
+  ('a0000000-0000-0000-0000-000000000004', 'Mr. Emmanuel', 'Morbe', 'cashier', '+211929420661', 'emmanuel@globalpharmacy.ss', '2025-01-05', 200000),
+  ('a0000000-0000-0000-0000-000000000005', 'Dr. Mary', 'Evelino', 'general_manager', '+256778551051', 'mary@globalpharmacy.ss', '2025-06-15', 280000),
+  ('a0000000-0000-0000-0000-000000000006', 'Dr. Bortel', 'Ohesa', 'pharmacist', '+211920123456', 'bortel@globalpharmacy.ss', '2026-01-01', 250000)
+ON CONFLICT (id) DO UPDATE SET
+  first_name = EXCLUDED.first_name, last_name = EXCLUDED.last_name,
+  role = EXCLUDED.role, phone = EXCLUDED.phone,
+  email = EXCLUDED.email, hire_date = EXCLUDED.hire_date, salary = EXCLUDED.salary;
+
+-- Delete legacy PIN rows (old seeded IDs/PINs) and install authoritative PINs
+DELETE FROM staff_pins WHERE staff_id::text NOT LIKE 'a0000000-%';
+INSERT INTO staff_pins (staff_id, pin) VALUES
+  ('a0000000-0000-0000-0000-000000000001', '0887'),
+  ('a0000000-0000-0000-0000-000000000002', '5184'),
+  ('a0000000-0000-0000-0000-000000000003', '9067'),
+  ('a0000000-0000-0000-0000-000000000004', '2741'),
+  ('a0000000-0000-0000-0000-000000000005', '6358'),
+  ('a0000000-0000-0000-0000-000000000006', '4819')
+ON CONFLICT (staff_id) DO UPDATE SET pin = EXCLUDED.pin;

@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 const roleHome: Record<string, string> = {
-  pharmacist: '/pos',
-  cashier: '/inventory',
-  general_manager: '/inventory',
+  pharmacist: '/dashboard',
+  cashier: '/dashboard',
+  general_manager: '/dashboard',
   admin: '/dashboard',
 };
 

@@ -13,7 +13,7 @@ export interface SyncResult {
 
 type TableName =
   | 'products' | 'suppliers' | 'customers' | 'sales' | 'sale_items'
-  | 'purchases' | 'purchase_items' | 'expenses' | 'staff' | 'payroll' | 'budgets';
+  | 'purchases' | 'purchase_items' | 'expenses' | 'staff' | 'payroll' | 'budgets' | 'auditLogs';
 
 interface PullConfig {
   table: TableName;
@@ -61,6 +61,9 @@ const PULL_CONFIG: Record<TableName, PullConfig> = {
     table: 'budgets', remoteName: 'budgets', tsColumn: 'created_at',
     numeric: ['amount', 'spent'],
     defaults: { currency: 'SSP' },
+  },
+  auditLogs: {
+    table: 'auditLogs', remoteName: 'audit_logs', tsColumn: 'created_at', numeric: [],
   },
   sale_items: {
     table: 'sale_items', remoteName: 'sale_items', tsColumn: null,
@@ -248,7 +251,7 @@ export async function pullFromSupabase(): Promise<number> {
   // Sales and their line items are insert-only from remote: we pull NEW
   // sales made on other devices so all reports are complete, but we never
   // overwrite a local sale that was created on this device.
-  const INSERT_ONLY = new Set(['sales', 'sale_items', 'purchases', 'purchase_items']);
+  const INSERT_ONLY = new Set(['sales', 'sale_items', 'purchases', 'purchase_items', 'auditLogs']);
 
   for (const config of Object.values(PULL_CONFIG)) {
     try {

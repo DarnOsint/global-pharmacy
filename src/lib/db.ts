@@ -1,7 +1,7 @@
 import { Dexie, type Table } from 'dexie';
 import type {
   Product, Supplier, Customer, Sale, SaleItem,
-  Purchase, PurchaseItem, Expense, Staff, Payroll, Budget
+  Purchase, PurchaseItem, Expense, Staff, Payroll, Budget, AuditLog
 } from '@/types/database';
 
 export class PharmacyDB extends Dexie {
@@ -16,6 +16,7 @@ export class PharmacyDB extends Dexie {
   staff!: Table<Staff>;
   payroll!: Table<Payroll>;
   budgets!: Table<Budget>;
+  auditLogs!: Table<AuditLog>;
 
   constructor() {
     super('GlobalPharmacyDB');
@@ -33,6 +34,9 @@ export class PharmacyDB extends Dexie {
     });
     this.version(2).stores({
       budgets: 'id, category, period, month',
+    }).upgrade(async () => {});
+    this.version(3).stores({
+      auditLogs: 'id, staff_id, entity_type, action, created_at',
     }).upgrade(async () => {});
   }
 }

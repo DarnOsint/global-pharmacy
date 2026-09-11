@@ -143,10 +143,25 @@ export interface Budget {
   id: string;
   category: string;
   amount: number;
-  currency: 'SSP' | 'USD';
-  period: 'monthly' | 'quarterly' | 'yearly';
-  month: string;
   spent: number;
+  currency: 'SSP' | 'USD';
+  period: string;
+  month: string | null;
+  created_at: string;
+}
+
+export interface AuditLog {
+  id: string;
+  staff_id: string;
+  staff_name: string;
+  staff_role: string;
+  action: string;
+  entity_type: string;
+  entity_id: string | null;
+  entity_name: string;
+  description: string;
+  old_values: Record<string, unknown> | null;
+  new_values: Record<string, unknown> | null;
   created_at: string;
 }
 
