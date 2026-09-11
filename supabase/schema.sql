@@ -209,7 +209,7 @@ CREATE POLICY "Allow all" ON budgets FOR ALL USING (true);
 -- STAFF PINS (for POS login)
 CREATE TABLE staff_pins (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  staff_id UUID NOT NULL REFERENCES staff(id) ON DELETE CASCADE,
+  staff_id UUID NOT NULL UNIQUE REFERENCES staff(id) ON DELETE CASCADE,
   pin TEXT NOT NULL UNIQUE,
   is_active BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()

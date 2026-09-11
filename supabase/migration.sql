@@ -101,6 +101,14 @@ ON CONFLICT (id) DO UPDATE SET
   role = EXCLUDED.role, phone = EXCLUDED.phone,
   email = EXCLUDED.email, hire_date = EXCLUDED.hire_date, salary = EXCLUDED.salary;
 
+-- Add UNIQUE constraint on staff_id so PIN upserts can use ON CONFLICT (staff_id)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'staff_pins_staff_id_key') THEN
+    ALTER TABLE staff_pins ADD CONSTRAINT staff_pins_staff_id_key UNIQUE (staff_id);
+  END IF;
+END $$;
+
 -- Delete legacy PIN rows (old seeded IDs/PINs) and install authoritative PINs
 DELETE FROM staff_pins WHERE staff_id::text NOT LIKE 'a0000000-%';
 INSERT INTO staff_pins (staff_id, pin) VALUES
