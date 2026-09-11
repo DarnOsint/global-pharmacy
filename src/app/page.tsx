@@ -156,7 +156,9 @@ export default function PinLoginPage() {
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
               {settings.logoBase64 ? (
-                <img src={settings.logoBase64} alt="Store logo" className="w-20 h-20 object-contain drop-shadow-lg" />
+                <div className="w-20 h-20 rounded-lg bg-white flex items-center justify-center overflow-hidden shadow-sm">
+                  <img src={settings.logoBase64} alt="Store logo" className="w-full h-full object-contain" />
+                </div>
               ) : (
                 <Pill className="w-10 h-10 text-[#fb923c]" />
               )}
