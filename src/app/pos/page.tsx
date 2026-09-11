@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { AuthGuard } from '@/components/auth-guard';
 import { useAuthStore } from '@/lib/auth';
 import { useSettingsStore } from '@/lib/settings-store';
@@ -12,12 +13,11 @@ import {
 } from '@/lib/offline-db';
 import { seedOfflineData } from '@/lib/seed-data';
 import { formatCurrency, formatCurrencyPair, daysUntilExpiry, convertCurrency } from '@/lib/utils';
-import { generateId } from '@/lib/utils';
-import type { Product, Customer } from '@/types/database';
+import type { Product, Sale } from '@/types/database';
 import {
   Search, ShoppingCart, Plus, Minus, Trash2, X,
   CreditCard, Banknote, ArrowRightLeft, User,
-  CheckCircle2, Printer, Package, AlertTriangle,
+  CheckCircle2, Printer, Package, LogOut,
 } from 'lucide-react';
 
 interface CartItem {
@@ -26,7 +26,8 @@ interface CartItem {
 }
 
 export default function POSPage() {
-  const { user } = useAuthStore();
+  const { user, logout } = useAuthStore();
+  const router = useRouter();
   const settings = useSettingsStore();
   const { refreshCount } = useSync();
   const [products, setProducts] = useState<Product[]>([]);
@@ -37,7 +38,7 @@ export default function POSPage() {
   const [currency, setCurrency] = useState<'SSP' | 'USD'>('SSP');
   const [showPayment, setShowPayment] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
-  const [completedSale, setCompletedSale] = useState<{ sale: any; items: CartItem[] } | null>(null);
+  const [completedSale, setCompletedSale] = useState<{ sale: Sale; items: CartItem[] } | null>(null);
   const [processing, setProcessing] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const receiptRef = useRef<HTMLDivElement>(null);
@@ -48,7 +49,10 @@ export default function POSPage() {
     setProducts(data.filter(p => p.is_active && p.quantity_in_stock > 0));
   }, []);
 
-  useEffect(() => { loadProducts(); }, [loadProducts]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadProducts();
+  }, [loadProducts]);
 
   const categories = useMemo(() => {
     const cats = new Set(products.map(p => p.category));
@@ -106,7 +110,6 @@ export default function POSPage() {
     setProcessing(true);
 
     try {
-      const saleId = generateId();
       const invoiceNumber = `POS-${Date.now().toString(36).toUpperCase()}`;
 
       const sale = await addSale({
@@ -267,8 +270,16 @@ ${settings.logoBase64 ? `<div class="logo"><img src="${settings.logoBase64}" /><
           </div>
           <span className="text-white/70 text-sm">Point of Sale</span>
           <div className="flex-1" />
-          <a href="/dashboard" className="text-white/80 hover:text-white text-sm">Dashboard</a>
-          <span className="text-white/50 text-sm">{user?.first_name} {user?.last_name}</span>
+          <a href="/dashboard" className="text-white/80 hover:text-white text-sm hidden sm:block">Dashboard</a>
+          <span className="text-white/50 text-sm hidden sm:block">{user?.first_name} {user?.last_name}</span>
+          <button
+            onClick={() => { logout(); router.replace('/'); }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 border border-white/30 text-white text-sm font-medium transition-colors"
+            title="Log out"
+          >
+            <LogOut className="w-4 h-4" />
+            Log out
+          </button>
         </header>
 
         <div className="flex flex-1 overflow-hidden">

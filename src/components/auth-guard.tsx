@@ -12,10 +12,11 @@ const roleHome: Record<string, string> = {
 };
 
 export function AuthGuard({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: string[] }) {
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user, hasHydrated } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
+    if (!hasHydrated) return;
     if (!isAuthenticated) {
       router.replace('/');
       return;
@@ -23,8 +24,9 @@ export function AuthGuard({ children, allowedRoles }: { children: React.ReactNod
     if (allowedRoles && user && !allowedRoles.includes(user.role)) {
       router.replace(roleHome[user.role] || '/dashboard');
     }
-  }, [isAuthenticated, user, router, allowedRoles]);
+  }, [hasHydrated, isAuthenticated, user, router, allowedRoles]);
 
+  if (!hasHydrated) return null;
   if (!isAuthenticated) return null;
   if (allowedRoles && user && !allowedRoles.includes(user.role)) return null;
 

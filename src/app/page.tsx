@@ -15,11 +15,17 @@ export default function PinLoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
-  const { login } = useAuthStore();
+  const { login, isAuthenticated, user, hasHydrated } = useAuthStore();
 
   useEffect(() => {
     seedAuthDb().then(() => setReady(true));
   }, []);
+
+  useEffect(() => {
+    if (!hasHydrated || !isAuthenticated || !user) return;
+    const roleHome: Record<string, string> = { cashier: '/pos', pharmacist: '/inventory', store_manager: '/inventory', admin: '/dashboard' };
+    router.replace(roleHome[user.role] || '/dashboard');
+  }, [hasHydrated, isAuthenticated, user, router]);
 
   const handleDigit = useCallback((digit: string) => {
     if (pin.length < 4) {
