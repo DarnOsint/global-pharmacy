@@ -2,6 +2,12 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { createIdbStorage } from '@/lib/idb-storage';
 
+export interface RoleConfig {
+  id: string;
+  name: string;
+  color: string;
+}
+
 export interface StoreSettings {
   storeName: string;
   address: string;
@@ -16,6 +22,7 @@ export interface StoreSettings {
   expiryWarningDays: number;
   exchangeRate: number;
   categories: string[];
+  roles: RoleConfig[];
   updatedAt: number;
 }
 
@@ -25,6 +32,9 @@ interface SettingsStore extends StoreSettings {
   clearLogo: () => void;
   addCategory: (name: string) => void;
   removeCategory: (name: string) => void;
+  addRole: (role: RoleConfig) => void;
+  updateRole: (id: string, patch: Partial<RoleConfig>) => void;
+  removeRole: (id: string) => void;
 }
 
 const defaultCategories = [
@@ -37,6 +47,13 @@ const defaultCategories = [
   'respiratory',
   'dermatology',
   'other',
+];
+
+const defaultRoles: RoleConfig[] = [
+  { id: 'admin', name: 'Admin', color: 'info' },
+  { id: 'pharmacist', name: 'Pharmacist', color: 'success' },
+  { id: 'cashier', name: 'Cashier', color: 'warning' },
+  { id: 'store_manager', name: 'Store Manager', color: 'default' },
 ];
 
 const defaultSettings: StoreSettings = {
@@ -53,6 +70,7 @@ const defaultSettings: StoreSettings = {
   expiryWarningDays: 90,
   exchangeRate: 1550,
   categories: defaultCategories,
+  roles: defaultRoles,
   updatedAt: 0,
 };
 
@@ -74,6 +92,23 @@ export const useSettingsStore = create<SettingsStore>()(
         set((state) => ({
           ...state,
           categories: state.categories.filter((c) => c !== name),
+        })),
+      addRole: (role) =>
+        set((state) => {
+          if (state.roles.some((r) => r.id === role.id)) return state;
+          return { ...state, roles: [...state.roles, role], updatedAt: Date.now() };
+        }),
+      updateRole: (id, patch) =>
+        set((state) => ({
+          ...state,
+          roles: state.roles.map((r) => (r.id === id ? { ...r, ...patch } : r)),
+          updatedAt: Date.now(),
+        })),
+      removeRole: (id) =>
+        set((state) => ({
+          ...state,
+          roles: state.roles.filter((r) => r.id !== id),
+          updatedAt: Date.now(),
         })),
     }),
     {

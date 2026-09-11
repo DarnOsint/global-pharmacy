@@ -110,7 +110,7 @@ export interface Staff {
   id: string;
   first_name: string;
   last_name: string;
-  role: 'admin' | 'pharmacist' | 'cashier' | 'store_manager';
+  role: string;
   phone: string;
   email: string;
   hire_date: string;

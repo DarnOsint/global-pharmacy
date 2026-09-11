@@ -5,7 +5,7 @@ export interface StaffPin {
   staff_id: string;
   first_name: string;
   last_name: string;
-  role: 'admin' | 'pharmacist' | 'cashier' | 'store_manager';
+  role: string;
   pin: string;
   username?: string;
   password?: string;

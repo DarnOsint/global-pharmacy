@@ -7,7 +7,7 @@ export interface AuthUser {
   id: string;
   first_name: string;
   last_name: string;
-  role: 'admin' | 'pharmacist' | 'cashier' | 'store_manager';
+  role: string;
   pin: string;
 }
 

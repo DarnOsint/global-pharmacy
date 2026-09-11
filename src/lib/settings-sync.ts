@@ -22,6 +22,7 @@ const SYNC_FIELDS: (keyof SyncableSettings)[] = [
   'expiryWarningDays',
   'exchangeRate',
   'categories',
+  'roles',
   'logoBase64',
 ];
 
