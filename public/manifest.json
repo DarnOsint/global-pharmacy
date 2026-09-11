@@ -1,7 +1,7 @@
 {
   "name": "Global Pharmacy",
   "short_name": "GlobalPharm",
-  "description": "Pharmacy Management System — Works Fully Offline",
+  "description": "Pharmacy Management System — Works Fully Offline · Designed & developed by Cyberville",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -15,5 +15,8 @@
     { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
   ],
   "categories": ["business", "medical", "health"],
+  "developer": {
+    "name": "Cyberville"
+  },
   "prefer_related_applications": false
 }

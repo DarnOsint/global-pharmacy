@@ -8,9 +8,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useSettingsStore } from '@/lib/settings-store';
 import { useAuthStore } from '@/lib/auth';
-import { Settings, Store, Database, Bell, Shield, Upload, X, Image, User, Save, AlertTriangle, DollarSign, Tag, Plus, Trash2, Download } from 'lucide-react';
+import { Settings, Store, Database, Bell, Shield, Upload, X, Image, User, Save, AlertTriangle, DollarSign, Tag, Plus, Trash2, Download, Info, Pill } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { getAllProducts, getAllSales, getAllExpenses, getAllPurchases, getAllStaff } from '@/lib/offline-db';
+import { CybervilleCredit } from '@/components/cyberville-brand';
 
 export default function SettingsPage() {
   const { user } = useAuthStore();
@@ -428,6 +429,37 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* About */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Info className="w-5 h-5 text-primary" />
+              About
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row items-center gap-6">
+              <div className="w-24 h-24 rounded-2xl bg-accent flex items-center justify-center overflow-hidden shrink-0">
+                {settings.logoBase64 ? (
+                  <img src={settings.logoBase64} alt="Logo" className="w-full h-full object-contain p-2" />
+                ) : (
+                  <Pill className="w-10 h-10 text-white" />
+                )}
+              </div>
+              <div className="flex-1 text-center sm:text-left">
+                <p className="text-lg font-bold">{settings.storeName || 'Global Pharmacy'} — Management System</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Offline-first pharmacy management system for inventory, sales, purchases, expenses, HR and expiry tracking.
+                </p>
+              </div>
+              <div className="px-6 py-4 rounded-xl bg-muted/50 border border-border text-center">
+                <CybervilleCredit />
+                <p className="text-[10px] text-muted-foreground mt-1.5">Cyberville is the developer, not the owner of this pharmacy.</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </AppShell>
     </AuthGuard>

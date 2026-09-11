@@ -5,7 +5,8 @@ import { SyncProvider } from "@/components/sync-provider";
 
 export const metadata: Metadata = {
   title: "Global Pharmacy",
-  description: "Pharmacy Management System — Inventory, Sales, Expiry Tracking & More",
+  description: "Pharmacy Management System — Inventory, Sales, Expiry Tracking & More · Designed & developed by Cyberville",
+  generator: "Cyberville",
   manifest: "/manifest.json",
   icons: { icon: "/icons/icon.svg" },
   appleWebApp: {
