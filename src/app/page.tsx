@@ -6,6 +6,7 @@ import { Pill, Delete, Loader2, AlertCircle } from 'lucide-react';
 import { useAuthStore, type AuthUser } from '@/lib/auth';
 import { seedAuthDb, verifyPinOffline } from '@/lib/auth-db';
 import { useSettingsStore } from '@/lib/settings-store';
+import { CybervilleCredit } from '@/components/cyberville-brand';
 
 export default function PinLoginPage() {
   const router = useRouter();
@@ -158,6 +159,8 @@ export default function PinLoginPage() {
         <p className="text-center text-white/40 text-xs mt-6">
           Offline capable — works without internet
         </p>
+
+        <CybervilleCredit className="text-white/40 mt-3" />
       </div>
     </div>
   );

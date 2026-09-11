@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 
 import { useSettingsStore } from '@/lib/settings-store';
+import { CybervilleCredit } from '@/components/cyberville-brand';
 
 interface NavItem {
   href: string;
@@ -158,6 +159,7 @@ export function Sidebar() {
             <LogOut className="w-5 h-5 shrink-0" />
             Logout
           </button>
+          <CybervilleCredit className="text-white/40 mt-2 mb-0" />
         </div>
       </aside>
     </>
