@@ -13,6 +13,7 @@ export default function PinLoginPage() {
   const settings = useSettingsStore();
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
+  const [errorNonce, setErrorNonce] = useState(0);
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
   const { login, isAuthenticated, user, hasHydrated } = useAuthStore();
@@ -50,6 +51,7 @@ export default function PinLoginPage() {
             router.push(roleHome[user.role] || '/dashboard');
           } else {
             setError('Invalid PIN. Please try again.');
+            setErrorNonce((n) => n + 1);
             setPin('');
           }
           setLoading(false);
@@ -82,23 +84,23 @@ export default function PinLoginPage() {
 
   if (!ready) {
     return (
-      <div className="min-h-screen bg-[#05070f] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-[#22b7ef] animate-spin" />
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-[#2f6fd6] animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="relative min-h-screen bg-[#05070f] text-[#e6edf7] overflow-hidden flex flex-col items-center justify-center px-4">
-      {/* Cyberville theme backdrop: radial glows + subtle grid */}
+    <div className="relative min-h-screen bg-white text-[#0c1322] overflow-hidden flex flex-col items-center justify-center px-4">
+      {/* Cyberville theme backdrop on white: soft blue glows + subtle grid */}
       <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-        <div className="absolute top-[-160px] right-[-10%] w-[700px] h-[420px] rounded-full bg-[radial-gradient(circle,rgba(34,183,239,0.13),transparent_60%)]" />
-        <div className="absolute top-[25%] left-[-15%] w-[600px] h-[440px] rounded-full bg-[radial-gradient(circle,rgba(47,111,214,0.16),transparent_60%)]" />
+        <div className="absolute top-[-160px] right-[-10%] w-[700px] h-[420px] rounded-full bg-[radial-gradient(circle,rgba(34,183,239,0.09),transparent_60%)]" />
+        <div className="absolute top-[25%] left-[-15%] w-[600px] h-[440px] rounded-full bg-[radial-gradient(circle,rgba(47,111,214,0.10),transparent_60%)]" />
         <div
           className="absolute inset-0"
           style={{
             backgroundImage:
-              'linear-gradient(rgba(148,163,184,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.05) 1px, transparent 1px)',
+              'linear-gradient(rgba(15,23,42,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,0.035) 1px, transparent 1px)',
             backgroundSize: '56px 56px',
             maskImage: 'radial-gradient(ellipse 80% 70% at 50% 30%, black 40%, transparent 100%)',
             WebkitMaskImage: 'radial-gradient(ellipse 80% 70% at 50% 30%, black 40%, transparent 100%)',
@@ -108,45 +110,60 @@ export default function PinLoginPage() {
 
       <div className="relative w-full max-w-sm">
         {/* Cyberville branding */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 cv-fade-up">
           <div className="flex items-center justify-center gap-3 mb-2">
-            <img
-              src="/cyberville/logo-mark.png"
-              alt="Cyberville logo"
-              className="w-10 h-10 object-contain"
-            />
+            <div className="w-10 h-10 rounded-xl overflow-hidden shadow-sm">
+              <img
+                src="/cyberville/logo-mark.png"
+                alt="Cyberville logo"
+                className="w-full h-full object-cover"
+              />
+            </div>
             <span className="bg-clip-text text-transparent bg-[linear-gradient(90deg,#35c8f5,#2f6fd6)] text-[1.35rem] font-extrabold tracking-tight">
               Cyberville
             </span>
           </div>
-          <p className="text-[#94a3b8] text-xs tracking-wide">
+          <p className="text-[#64748b] text-xs tracking-wide">
             Software Development · Juba, South Sudan
           </p>
         </div>
 
         {/* Store / PIN card */}
-        <div className="bg-[#0c1322]/90 border border-[rgba(148,163,184,0.14)] rounded-2xl p-8 shadow-[0_30px_80px_rgba(0,0,0,0.45)] backdrop-blur">
-          <div className="text-center mb-8">
-            <div className="w-14 h-14 rounded-xl bg-[#101a30] border border-[rgba(148,163,184,0.14)] mx-auto mb-4 flex items-center justify-center overflow-hidden">
+        <div className="bg-white border border-[rgba(15,23,42,0.08)] rounded-3xl p-8 shadow-[0_8px_40px_rgba(15,23,42,0.10)] cv-fade-up" style={{ animationDelay: '0.08s' }}>
+          {/* Rotating gradient ring avatar */}
+          <div className="relative mb-6 mx-auto w-20 h-20">
+            <div
+              className="absolute -inset-1.5 rounded-full cv-spin-slow"
+              style={{ background: 'conic-gradient(from 0deg, #35c8f5, #2f6fd6, #22b7ef, #2f6fd6, #35c8f5)' }}
+            />
+            <div className="absolute inset-0 rounded-full bg-[#0c1322] cv-glow-pulse flex items-center justify-center overflow-hidden">
               {settings.logoBase64 ? (
-                <img src={settings.logoBase64} alt="Store logo" className="w-full h-full object-contain" />
+                <img src={settings.logoBase64} alt="Store logo" className="w-full h-full object-contain p-2" />
               ) : (
-                <Pill className="w-7 h-7 text-[#22b7ef]" />
+                <Pill className="w-9 h-9 text-[#35c8f5]" />
               )}
             </div>
-            <h1 className="text-xl font-bold text-[#e6edf7]">{settings.storeName || 'Global Pharmacy'}</h1>
-            <p className="text-[#94a3b8] text-sm mt-1">Enter your PIN to sign in</p>
+          </div>
+
+          <div className="text-center mb-7">
+            <h1 className="text-xl font-bold text-[#0c1322]">{settings.storeName || 'Global Pharmacy'}</h1>
+            <p className="text-[#64748b] text-sm mt-1">
+              {loading ? 'Verifying your PIN...' : 'Enter your 4-digit PIN to sign in'}
+            </p>
           </div>
 
           {/* PIN dots */}
-          <div className="flex justify-center gap-4 mb-8">
+          <div
+            key={errorNonce}
+            className={`flex justify-center gap-4 mb-6 ${errorNonce > 0 ? 'cv-shake' : ''}`}
+          >
             {[0, 1, 2, 3].map((i) => (
               <div
                 key={i}
-                className={`w-4 h-4 rounded-full transition-all duration-200 ${
+                className={`h-4 w-4 rounded-full transition-all duration-300 ${
                   i < pin.length
-                    ? 'bg-[linear-gradient(90deg,#35c8f5,#2f6fd6)] scale-110'
-                    : 'bg-white/10'
+                    ? 'cv-pop bg-[linear-gradient(135deg,#35c8f5,#2f6fd6)] shadow-[0_0_14px_rgba(47,111,214,0.55)]'
+                    : 'border-2 border-slate-300 bg-white'
                 }`}
               />
             ))}
@@ -154,7 +171,7 @@ export default function PinLoginPage() {
 
           {/* Error message */}
           {error && (
-            <div className="flex items-center justify-center gap-2 mb-4 text-red-400 text-sm">
+            <div className="flex items-center justify-center gap-2 mb-5 text-sm text-red-500 cv-pop">
               <AlertCircle className="w-4 h-4" />
               {error}
             </div>
@@ -162,8 +179,9 @@ export default function PinLoginPage() {
 
           {/* Loading */}
           {loading && (
-            <div className="flex justify-center mb-4">
-              <Loader2 className="w-6 h-6 text-[#22b7ef] animate-spin" />
+            <div className="flex items-center justify-center gap-2 mb-5 text-sm text-[#2f6fd6]">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Verifying…
             </div>
           )}
 
@@ -176,7 +194,8 @@ export default function PinLoginPage() {
                   <button
                     key={i}
                     onClick={handleDelete}
-                    className="h-16 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-[#e6edf7] flex items-center justify-center transition-colors"
+                    disabled={loading}
+                    className="h-16 rounded-2xl bg-slate-100 hover:bg-slate-200 text-[#0c1322] flex items-center justify-center transition-all active:scale-90 disabled:opacity-40"
                   >
                     <Delete className="w-6 h-6" />
                   </button>
@@ -187,20 +206,24 @@ export default function PinLoginPage() {
                   key={i}
                   onClick={() => handleDigit(d)}
                   disabled={loading || pin.length >= 4}
-                  className="h-16 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] active:scale-95 text-[#e6edf7] text-2xl font-semibold flex items-center justify-center transition-all disabled:opacity-50"
+                  className="h-16 rounded-2xl bg-white border border-slate-200 shadow-sm hover:border-[#2f6fd6]/35 hover:shadow-md hover:-translate-y-0.5 active:scale-90 active:translate-y-0 text-[#0c1322] text-2xl font-semibold flex items-center justify-center transition-all disabled:opacity-40"
                 >
                   {d}
                 </button>
               );
             })}
           </div>
+
+          <p className="text-center text-slate-400 text-xs mt-5">
+            Forgot your PIN? Contact your administrator.
+          </p>
         </div>
 
-        <p className="text-center text-[#94a3b8]/70 text-xs mt-6">
+        <p className="text-center text-slate-400 text-xs mt-6 cv-fade-up" style={{ animationDelay: '0.16s' }}>
           Offline capable — works without internet
         </p>
 
-        <CybervilleCredit className="text-[#94a3b8]/50 mt-3" />
+        <CybervilleCredit className="text-slate-400 mt-3 cv-fade-up" style={{ animationDelay: '0.22s' }} />
       </div>
     </div>
   );
