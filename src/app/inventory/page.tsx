@@ -298,6 +298,7 @@ export default function InventoryPage() {
                       </td>
                       <td className="p-3 text-muted-foreground text-sm">{product.generic_name || '—'}</td>
                       <td className="p-3 text-muted-foreground font-mono text-xs">{product.product_code || '—'}</td>
+                      <td className="p-3 text-muted-foreground font-mono text-xs">{product.sku}</td>
                       <td className="p-3"><Badge variant="info">{product.category}</Badge></td>
                       <td className="p-3 text-right">
                         <span className="font-medium">{formatCurrencyPair(product.unit_price, product.currency, settings.exchangeRate)}</span>
@@ -321,7 +322,7 @@ export default function InventoryPage() {
                   );
                 })}
                 {filtered.length === 0 && !loading && (
-                  <tr><td colSpan={7}>
+                  <tr><td colSpan={9}>
                     <EmptyState icon={<Package className="w-8 h-8 text-muted-foreground" />} title="No products found" description="Add your first product to get started" action={<Button onClick={() => setShowAddModal(true)}>Add Product</Button>} />
                   </td></tr>
                 )}
