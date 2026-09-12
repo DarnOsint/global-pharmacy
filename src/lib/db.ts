@@ -38,6 +38,9 @@ export class PharmacyDB extends Dexie {
     this.version(3).stores({
       auditLogs: 'id, staff_id, entity_type, action, created_at',
     }).upgrade(async () => {});
+    this.version(4).stores({
+      products: 'id, name, sku, product_code, barcode, category, supplier_id, expiry_date, is_active',
+    }).upgrade(async () => {});
   }
 }
 

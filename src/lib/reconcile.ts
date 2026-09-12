@@ -183,6 +183,7 @@ export async function reconcileProducts(): Promise<string | null> {
           category: p.category,
           supplier_id: p.supplier_id,
           sku: p.sku,
+          product_code: p.product_code,
           barcode: p.barcode,
           unit_price: p.unit_price,
           cost_price: p.cost_price,

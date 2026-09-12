@@ -41,7 +41,7 @@ const alertDaysOptions = [
 ];
 
 const emptyProduct: Partial<Product> = {
-  name: '', generic_name: '', category: 'antibiotics', sku: '', unit_price: 0, cost_price: 0,
+  name: '', generic_name: '', category: 'antibiotics', sku: '', product_code: '', unit_price: 0, cost_price: 0,
   currency: 'SSP', quantity_in_stock: 0, reorder_level: 0, expiry_date: '', alert_days: 30,
   batch_number: '', manufacturer: '', is_active: true,
 };
@@ -115,6 +115,7 @@ export default function InventoryPage() {
       generic_name: (form.querySelector('#generic') as HTMLInputElement).value,
       category: (form.querySelector('#category') as HTMLSelectElement).value,
       sku: (form.querySelector('#sku') as HTMLInputElement).value,
+      product_code: (form.querySelector('#product_code') as HTMLInputElement)?.value || '',
       barcode: (form.querySelector('#barcode') as HTMLInputElement)?.value || null,
       unit_price: Number((form.querySelector('#price') as HTMLInputElement).value),
       cost_price: Number((form.querySelector('#cost') as HTMLInputElement).value),
@@ -144,8 +145,8 @@ export default function InventoryPage() {
   };
 
   const downloadTemplate = () => {
-    const headers = ['name', 'generic_name', 'category', 'sku', 'manufacturer', 'currency', 'unit_price', 'cost_price', 'quantity_in_stock', 'reorder_level', 'expiry_date', 'alert_days', 'batch_number'];
-    const exampleRow = ['Amoxicillin 500mg', 'Amoxicillin', 'antibiotics', 'AMX-500', 'Juba Pharma', 'SSP', 8500, 6000, 45, 20, '2027-06-15', 90, 'BCH-001'];
+    const headers = ['name', 'generic_name', 'category', 'sku', 'product_code', 'manufacturer', 'currency', 'unit_price', 'cost_price', 'quantity_in_stock', 'reorder_level', 'expiry_date', 'alert_days', 'batch_number'];
+    const exampleRow = ['Amoxicillin 500mg', 'Amoxicillin', 'antibiotics', 'AMX-500', 'PC-001', 'Juba Pharma', 'SSP', 8500, 6000, 45, 20, '2027-06-15', 90, 'BCH-001'];
     const ws = XLSX.utils.aoa_to_sheet([headers, exampleRow]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Products');
@@ -189,6 +190,7 @@ export default function InventoryPage() {
             generic_name: String(row.generic_name || row.name),
             category: validCategories.includes(cat) ? cat : 'other',
             sku: serialValue,
+            product_code: String(row.product_code || row.code || ''),
             barcode: row.barcode ? String(row.barcode) : null,
             unit_price: Number(row.unit_price) || 0,
             cost_price: Number(row.cost_price) || 0,
@@ -272,6 +274,8 @@ export default function InventoryPage() {
               <thead>
                 <tr className="border-b border-border bg-muted/50">
                   <th className="text-left p-3 font-medium">Product</th>
+                  <th className="text-left p-3 font-medium">Generic Name</th>
+                  <th className="text-left p-3 font-medium">Product Code</th>
                   <th className="text-left p-3 font-medium">SKU</th>
                   <th className="text-left p-3 font-medium">Category</th>
                   <th className="text-right p-3 font-medium">Price</th>
@@ -292,7 +296,8 @@ export default function InventoryPage() {
                           <p className="text-xs text-muted-foreground">{product.manufacturer}</p>
                         </div>
                       </td>
-                      <td className="p-3 text-muted-foreground font-mono text-xs">{product.sku}</td>
+                      <td className="p-3 text-muted-foreground text-sm">{product.generic_name || '—'}</td>
+                      <td className="p-3 text-muted-foreground font-mono text-xs">{product.product_code || '—'}</td>
                       <td className="p-3"><Badge variant="info">{product.category}</Badge></td>
                       <td className="p-3 text-right">
                         <span className="font-medium">{formatCurrencyPair(product.unit_price, product.currency, settings.exchangeRate)}</span>
@@ -332,6 +337,7 @@ export default function InventoryPage() {
               <Input label="Product Name" id="name" placeholder="e.g. Amoxicillin 500mg" required />
               <Input label="Generic Name" id="generic" placeholder="e.g. Amoxicillin" required />
               <Input label="SKU" id="sku" placeholder="e.g. AMX-500" required />
+              <Input label="Product Code" id="product_code" placeholder="e.g. PC-001" />
               <Input label="Barcode" id="barcode" placeholder="Optional barcode" />
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1">Category</label>
@@ -376,7 +382,8 @@ export default function InventoryPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input label="Product Name" id="ename" value={editProduct.name || ''} onChange={e => setEditProduct({ ...editProduct, name: e.target.value })} required />
               <Input label="Generic Name" id="egeneric" value={editProduct.generic_name || ''} onChange={e => setEditProduct({ ...editProduct, generic_name: e.target.value })} required />
-              <Input label="SKU" id="esk" value={editProduct.sku || ''} onChange={e => setEditProduct({ ...editProduct, sku: e.target.value })} required />
+              <Input label="SKU" id="esku" value={editProduct.sku || ''} onChange={e => setEditProduct({ ...editProduct, sku: e.target.value })} required />
+              <Input label="Product Code" id="eproduct_code" value={editProduct.product_code || ''} onChange={e => setEditProduct({ ...editProduct, product_code: e.target.value })} />
               <Input label="Manufacturer" id="emanufacturer" value={editProduct.manufacturer || ''} onChange={e => setEditProduct({ ...editProduct, manufacturer: e.target.value })} required />
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1">Category</label>
@@ -418,6 +425,7 @@ export default function InventoryPage() {
                 <div><p className="text-muted-foreground">Name</p><p className="font-medium">{selectedProduct.name}</p></div>
                 <div><p className="text-muted-foreground">Generic</p><p className="font-medium">{selectedProduct.generic_name}</p></div>
                 <div><p className="text-muted-foreground">SKU</p><p className="font-medium font-mono">{selectedProduct.sku}</p></div>
+                <div><p className="text-muted-foreground">Product Code</p><p className="font-medium font-mono">{selectedProduct.product_code || '—'}</p></div>
                 <div><p className="text-muted-foreground">Category</p><Badge variant="info">{selectedProduct.category}</Badge></div>
                 <div><p className="text-muted-foreground">Unit Price</p><p className="font-medium">{formatCurrencyPair(selectedProduct.unit_price, selectedProduct.currency, settings.exchangeRate)}</p></div>
                 <div><p className="text-muted-foreground">Cost Price</p><p className="font-medium">{formatCurrencyPair(selectedProduct.cost_price, selectedProduct.currency, settings.exchangeRate)}</p></div>

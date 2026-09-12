@@ -30,6 +30,7 @@ CREATE TABLE products (
   category TEXT NOT NULL DEFAULT 'other',
   supplier_id UUID REFERENCES suppliers(id) ON DELETE SET NULL,
   sku TEXT NOT NULL UNIQUE,
+  product_code TEXT NOT NULL DEFAULT '',
   barcode TEXT,
   unit_price NUMERIC(12,2) NOT NULL DEFAULT 0,
   cost_price NUMERIC(12,2) NOT NULL DEFAULT 0,

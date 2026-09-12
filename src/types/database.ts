@@ -5,6 +5,7 @@ export interface Product {
   category: string;
   supplier_id: string | null;
   sku: string;
+  product_code: string;
   barcode: string | null;
   unit_price: number;
   cost_price: number;

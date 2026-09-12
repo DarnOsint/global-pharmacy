@@ -53,7 +53,7 @@ function diffDescription(
     amount: 'Amount', currency: 'Currency', date: 'Date', category: 'Category',
     unit_price: 'Price', cost_price: 'Cost price', quantity_in_stock: 'Stock quantity',
     reorder_level: 'Reorder level', expiry_date: 'Expiry date', batch_number: 'Batch',
-    manufacturer: 'Manufacturer', sku: 'SKU', barcode: 'Barcode',
+    manufacturer: 'Manufacturer', sku: 'SKU', product_code: 'Product code', barcode: 'Barcode',
     subtotal: 'Subtotal', tax: 'Tax', discount: 'Discount', total: 'Total',
     payment_method: 'Payment method', status: 'Status', notes: 'Notes',
     invoice_number: 'Invoice', customer_id: 'Customer', supplier_id: 'Supplier',
