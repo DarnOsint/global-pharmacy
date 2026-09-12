@@ -353,7 +353,7 @@ ${settings.logoBase64 ? `<div class="logo"><img src="${settings.logoBase64}" /><
                       )}
                       <div className="font-semibold text-sm leading-tight mb-1 line-clamp-2">{product.name}</div>
                       <div className="text-xs text-gray-500 mb-1">{product.manufacturer}</div>
-                      <div className="text-xs text-gray-400 mb-2">Serial Number: {product.sku}</div>
+                      <div className="text-xs text-gray-400 mb-2">SKU: {product.sku}</div>
                       <div className="font-bold text-primary text-sm">
                         {formatCurrencyPair(product.unit_price, product.currency, settings.exchangeRate)}
                       </div>
