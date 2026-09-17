@@ -10,7 +10,7 @@ export function CybervilleCredit({
 }) {
   return (
     <p className={cn('text-center text-xs', className)} style={style}>
-      Designed &amp; developed by <span className="font-semibold">Cyberville</span>
+      Designed &amp; developed by <span className="font-semibold">Cyberville.tech</span>
     </p>
   );
 }

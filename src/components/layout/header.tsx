@@ -45,7 +45,7 @@ export function Header() {
 
       <span className="hidden md:flex items-center gap-1.5 text-[11px] text-muted-foreground/70">
         <span className="w-1 h-1 rounded-full bg-primary" />
-        by <span className="font-semibold">Cyberville</span>
+        by <span className="font-semibold">Cyberville.tech</span>
       </span>
 
       {pendingCount > 0 && (

@@ -151,7 +151,7 @@ export default function PinLoginPage() {
             </span>
           </div>
           <p className="text-[#64748b] text-xs tracking-wide">
-            Software Development · Juba, South Sudan
+            Cyberville.tech — Software Development · Juba, South Sudan
           </p>
         </div>
 

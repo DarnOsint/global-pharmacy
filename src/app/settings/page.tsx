@@ -532,7 +532,7 @@ export default function SettingsPage() {
               </div>
               <div className="px-6 py-4 rounded-xl bg-muted/50 border border-border text-center">
                 <CybervilleCredit />
-                <p className="text-[10px] text-muted-foreground mt-1.5">Cyberville is the developer, not the owner of this pharmacy.</p>
+                <p className="text-[10px] text-muted-foreground mt-1.5">Cyberville.tech is the developer, not the owner of this pharmacy.</p>
               </div>
             </div>
           </CardContent>

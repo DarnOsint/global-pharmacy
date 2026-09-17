@@ -5,21 +5,25 @@ import { SyncProvider } from "@/components/sync-provider";
 
 export const metadata: Metadata = {
   title: "Global Pharmacy",
-  description: "Pharmacy Management System — Inventory, Sales, Expiry Tracking & More · Designed & developed by Cyberville",
-  generator: "Cyberville",
+  description: "Pharmacy Management System — Inventory, Sales, Expiry Tracking & More · Built by Cyberville.tech",
+  generator: "Cyberville.tech",
+  creator: "Cyberville.tech",
   manifest: "/manifest.json",
-  icons: { icon: "/icons/icon.svg" },
+  icons: {
+    icon: ["/icons/icon-192.png", "/icons/icon.svg"],
+    apple: "/icons/icon-192.png",
+  },
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "Global Pharmacy",
   },
 };
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f97316" },
-    { media: "(prefers-color-scheme: dark)", color: "#c2410c" },
+    { media: "(prefers-color-scheme: light)", color: "#04050c" },
+    { media: "(prefers-color-scheme: dark)", color: "#04050c" },
   ],
   width: "device-width",
   initialScale: 1,
@@ -34,7 +38,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="apple-touch-icon" href="/icons/icon.svg" />
+        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
       </head>

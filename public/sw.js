@@ -1,4 +1,4 @@
-const CACHE_NAME = 'global-pharmacy-v7-orange';
+const CACHE_NAME = 'global-pharmacy-v8-cyberville';
 const APP_SHELL = '/';
 
 const PRECACHE_ROUTES = [
