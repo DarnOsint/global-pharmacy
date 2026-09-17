@@ -1,4 +1,4 @@
-const CACHE_NAME = 'global-pharmacy-v8-cyberville';
+const CACHE_NAME = 'global-pharmacy-v9-forceupdate';
 const APP_SHELL = '/';
 
 const PRECACHE_ROUTES = [
@@ -24,6 +24,13 @@ self.addEventListener('install', (event) => {
     })
   );
   self.skipWaiting();
+});
+
+// The app asks the new worker to activate immediately when an update is found.
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('activate', (event) => {
