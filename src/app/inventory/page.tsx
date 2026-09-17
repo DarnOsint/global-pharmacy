@@ -282,15 +282,15 @@ export default function InventoryPage() {
           </div>
         )}
 
-        <div className="flex flex-col sm:flex-row gap-3 items-center">
-          <div className="relative w-full sm:max-w-[50%] flex-1">
+        <div className="space-y-3">
+          <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
               placeholder="Search by name, serial number, barcode, or generic name..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-9 py-2.5 rounded-lg border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full pl-10 pr-12 py-2.5 rounded-lg border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
             {search && (
               <button
@@ -302,8 +302,10 @@ export default function InventoryPage() {
               </button>
             )}
           </div>
-          <Button variant="outline" onClick={() => setShowScanner(true)} className="shrink-0"><ScanLine className="w-4 h-4 mr-2" /> Scan</Button>
-          <Select options={categories} value={category} onChange={(e) => setCategory(e.target.value)} className="w-full sm:w-48" />
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button variant="outline" onClick={() => setShowScanner(true)} className="sm:w-auto"><ScanLine className="w-4 h-4 mr-2" /> Scan</Button>
+            <Select options={categories} value={category} onChange={(e) => setCategory(e.target.value)} className="w-full sm:max-w-xs" />
+          </div>
         </div>
 
         <Card>
