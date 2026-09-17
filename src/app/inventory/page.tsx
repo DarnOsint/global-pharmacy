@@ -282,20 +282,20 @@ export default function InventoryPage() {
           </div>
         )}
 
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+        <div className="flex flex-col sm:flex-row gap-3 items-center">
+          <div className="relative w-full sm:max-w-[50%] flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
               placeholder="Search by name, serial number, barcode, or generic name..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-11 pr-10 py-3.5 rounded-xl border border-border bg-white text-base focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full pl-10 pr-9 py-2.5 rounded-lg border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
             {search && (
               <button
                 onClick={() => setSearch('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md text-muted-foreground hover:bg-muted"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-md text-muted-foreground hover:bg-muted"
                 title="Clear search"
               >
                 <X className="w-4 h-4" />
@@ -352,7 +352,7 @@ export default function InventoryPage() {
                       <td className="p-3 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <button onClick={() => { setSelectedProduct(product); setShowDetailModal(true); }} className="p-1.5 rounded hover:bg-muted"><Eye className="w-4 h-4" /></button>
-                          <button onClick={() => openRestock(product)} className="p-1.5 rounded hover:bg-emerald-50 text-emerald-600" title="Restock"><PackagePlus className="w-4 h-4" /></button>
+                          <button onClick={() => openRestock(product)} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold hover:bg-emerald-100" title="Restock"><PackagePlus className="w-4 h-4" /> Restock</button>
                           <button onClick={() => openEdit(product)} className="p-1.5 rounded hover:bg-muted"><Edit2 className="w-4 h-4" /></button>
                           {isAdmin && <button onClick={() => handleDelete(product.id)} className="p-1.5 rounded hover:bg-red-50 text-danger"><Trash2 className="w-4 h-4" /></button>}
                         </div>
