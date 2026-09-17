@@ -1,4 +1,4 @@
-const CACHE_NAME = 'global-pharmacy-v10-brand';
+const CACHE_NAME = 'global-pharmacy-v11-logo';
 const APP_SHELL = '/';
 
 const PRECACHE_ROUTES = [
