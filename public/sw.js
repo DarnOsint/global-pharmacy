@@ -1,4 +1,4 @@
-const CACHE_NAME = 'global-pharmacy-v9-forceupdate';
+const CACHE_NAME = 'global-pharmacy-v10-brand';
 const APP_SHELL = '/';
 
 const PRECACHE_ROUTES = [

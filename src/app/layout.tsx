@@ -4,8 +4,8 @@ import { PWAProvider } from "@/components/pwa-provider";
 import { SyncProvider } from "@/components/sync-provider";
 
 export const metadata: Metadata = {
-  title: "Global Pharmacy",
-  description: "Pharmacy Management System — Inventory, Sales, Expiry Tracking & More · Built by Cyberville.tech",
+  title: "Cyberville Pharmacy POS",
+  description: "Cyberville Pharmacy POS — Inventory, Sales, Expiry Tracking & More · Built by Cyberville.tech",
   generator: "Cyberville.tech",
   creator: "Cyberville.tech",
   manifest: "/manifest.json",
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Global Pharmacy",
+    title: "Cyberville Pharmacy POS",
   },
 };
 

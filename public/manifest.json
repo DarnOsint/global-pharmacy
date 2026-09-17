@@ -1,7 +1,7 @@
 {
-  "name": "Global Pharmacy",
-  "short_name": "GlobalPharm",
-  "description": "Pharmacy Management System — Works Fully Offline · Built by Cyberville.tech",
+  "name": "Cyberville Pharmacy POS",
+  "short_name": "Cyberville POS",
+  "description": "Cyberville Pharmacy POS — Works Fully Offline · Built by Cyberville.tech",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
