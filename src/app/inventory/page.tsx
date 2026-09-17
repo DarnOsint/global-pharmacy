@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Modal } from '@/components/ui/modal';
 import { EmptyState } from '@/components/ui/empty-state';
 import { SyncNowButton } from '@/components/sync-now-button';
-import { Package, Plus, Search, Edit2, Trash2, Eye, Upload, Download, ScanLine } from 'lucide-react';
+import { Package, Plus, Search, X, Edit2, Trash2, Eye, Upload, Download, ScanLine, PackagePlus } from 'lucide-react';
 import { BarcodeScanner } from '@/components/ui/barcode-scanner';
 import * as XLSX from 'xlsx';
 import { formatCurrency, formatDate, daysUntilExpiry, getExpiryStatus, formatCurrencyPair, type Currency } from '@/lib/utils';
@@ -72,6 +72,9 @@ export default function InventoryPage() {
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<{ success: number; errors: string[] } | null>(null);
   const [showScanner, setShowScanner] = useState(false);
+  const [showRestockModal, setShowRestockModal] = useState(false);
+  const [restockProduct, setRestockProduct] = useState<Product | null>(null);
+  const [restockQty, setRestockQty] = useState(10);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadProducts = useCallback(async () => {
@@ -141,6 +144,26 @@ export default function InventoryPage() {
     if (!confirm('Delete this product?')) return;
     await deleteProduct(id);
     await refreshCount();
+    await loadProducts();
+  };
+
+  const openRestock = (product: Product) => {
+    setRestockProduct(product);
+    setRestockQty(product.reorder_level > 0 ? product.reorder_level : 10);
+    setShowRestockModal(true);
+  };
+
+  const handleRestock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!restockProduct) return;
+    const qty = Number(restockQty);
+    if (!qty || qty <= 0) return;
+    await updateProduct(restockProduct.id, {
+      quantity_in_stock: restockProduct.quantity_in_stock + qty,
+    });
+    await refreshCount();
+    setShowRestockModal(false);
+    setRestockProduct(null);
     await loadProducts();
   };
 
@@ -261,8 +284,23 @@ export default function InventoryPage() {
 
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input type="text" placeholder="Search by name, serial number, barcode, or generic name..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search by name, serial number, barcode, or generic name..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-11 pr-10 py-3.5 rounded-xl border border-border bg-white text-base focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md text-muted-foreground hover:bg-muted"
+                title="Clear search"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
           <Button variant="outline" onClick={() => setShowScanner(true)} className="shrink-0"><ScanLine className="w-4 h-4 mr-2" /> Scan</Button>
           <Select options={categories} value={category} onChange={(e) => setCategory(e.target.value)} className="w-full sm:w-48" />
@@ -314,6 +352,7 @@ export default function InventoryPage() {
                       <td className="p-3 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <button onClick={() => { setSelectedProduct(product); setShowDetailModal(true); }} className="p-1.5 rounded hover:bg-muted"><Eye className="w-4 h-4" /></button>
+                          <button onClick={() => openRestock(product)} className="p-1.5 rounded hover:bg-emerald-50 text-emerald-600" title="Restock"><PackagePlus className="w-4 h-4" /></button>
                           <button onClick={() => openEdit(product)} className="p-1.5 rounded hover:bg-muted"><Edit2 className="w-4 h-4" /></button>
                           {isAdmin && <button onClick={() => handleDelete(product.id)} className="p-1.5 rounded hover:bg-red-50 text-danger"><Trash2 className="w-4 h-4" /></button>}
                         </div>
@@ -416,6 +455,26 @@ export default function InventoryPage() {
               <Button type="submit">Save Changes</Button>
             </div>
           </form>
+        </Modal>
+
+        {/* Restock Modal */}
+        <Modal open={showRestockModal} onClose={() => setShowRestockModal(false)} title="Restock Product" size="md">
+          {restockProduct && (
+            <form className="space-y-4" onSubmit={handleRestock}>
+              <div>
+                <p className="font-semibold">{restockProduct.name}</p>
+                <p className="text-sm text-muted-foreground">SKU: {restockProduct.sku} · Current stock: {restockProduct.quantity_in_stock} units</p>
+              </div>
+              <Input label="Quantity to add" id="restock_qty" type="number" min={1} value={restockQty} onChange={e => setRestockQty(Number(e.target.value))} required autoFocus />
+              <div className="rounded-lg bg-muted p-3 text-sm">
+                New stock will be <span className="font-bold">{restockProduct.quantity_in_stock + (restockQty || 0)}</span> units.
+              </div>
+              <div className="flex justify-end gap-3">
+                <Button variant="ghost" type="button" onClick={() => setShowRestockModal(false)}>Cancel</Button>
+                <Button type="submit"><PackagePlus className="w-4 h-4 mr-2" /> Add Stock</Button>
+              </div>
+            </form>
+          )}
         </Modal>
 
         {/* Detail Modal */}
