@@ -47,7 +47,7 @@ export default function POSPage() {
   const loadProducts = useCallback(async () => {
     await seedOfflineData();
     const data = await getAllProducts();
-    setProducts(data.filter(p => p.is_active && p.quantity_in_stock > 0));
+    setProducts(data.filter(p => p.is_active));
   }, []);
 
   useEffect(() => {
