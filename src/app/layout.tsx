@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { PWAProvider } from "@/components/pwa-provider";
 import { SyncProvider } from "@/components/sync-provider";
+import { InstallPrompt } from "@/components/install-prompt";
 
 export const metadata: Metadata = {
   title: "Cyberville Pharmacy POS",
@@ -47,6 +48,7 @@ export default function RootLayout({
           <SyncProvider />
           {children}
         </PWAProvider>
+        <InstallPrompt />
       </body>
     </html>
   );
