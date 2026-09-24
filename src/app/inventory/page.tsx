@@ -13,6 +13,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { SyncNowButton } from '@/components/sync-now-button';
 import { Package, Plus, Search, X, Edit2, Trash2, Eye, Upload, Download, ScanLine, PackagePlus } from 'lucide-react';
 import { BarcodeScanner } from '@/components/ui/barcode-scanner';
+import { ImageUploader } from '@/components/ui/image-uploader';
 import * as XLSX from 'xlsx';
 import { formatCurrency, formatDate, daysUntilExpiry, getExpiryStatus, formatCurrencyPair, type Currency } from '@/lib/utils';
 import { useAuthStore } from '@/lib/auth';
@@ -75,7 +76,13 @@ export default function InventoryPage() {
   const [showRestockModal, setShowRestockModal] = useState(false);
   const [restockProduct, setRestockProduct] = useState<Product | null>(null);
   const [restockQty, setRestockQty] = useState(10);
+  const [addImageUrl, setAddImageUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const openAddModal = () => {
+    setAddImageUrl(null);
+    setShowAddModal(true);
+  };
 
   const loadProducts = useCallback(async () => {
     await seedOfflineData();
@@ -130,13 +137,14 @@ export default function InventoryPage() {
       batch_number: (form.querySelector('#batch') as HTMLInputElement).value,
       manufacturer: (form.querySelector('#manufacturer') as HTMLInputElement).value,
       description: (form.querySelector('#desc') as HTMLTextAreaElement)?.value || null,
-      image_url: null,
+      image_url: addImageUrl || null,
       is_active: true,
       supplier_id: null,
     };
     await addProduct(data);
     await refreshCount();
     setShowAddModal(false);
+    setAddImageUrl(null);
     await loadProducts();
   };
 
@@ -261,7 +269,7 @@ export default function InventoryPage() {
             <Button variant="outline" onClick={downloadTemplate}><Download className="w-4 h-4 mr-2" /> Template</Button>
             <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={importing}><Upload className="w-4 h-4 mr-2" /> {importing ? 'Importing...' : 'Import Excel'}</Button>
             <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImport} />
-            <Button onClick={() => setShowAddModal(true)}>
+            <Button onClick={openAddModal}>
               <Plus className="w-4 h-4 mr-2" /> Add Product
             </Button>
           </div>
@@ -331,9 +339,18 @@ export default function InventoryPage() {
                   return (
                     <tr key={product.id} className="border-b border-border hover:bg-muted/30">
                       <td className="p-3">
-                        <div>
-                          <p className="font-medium">{product.name}</p>
-                          <p className="text-xs text-muted-foreground">{product.manufacturer}</p>
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg border border-border bg-muted shrink-0 overflow-hidden">
+                            {product.image_url ? (
+                              <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center"><Package className="w-4 h-4 text-muted-foreground" /></div>
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-medium">{product.name}</p>
+                            <p className="text-xs text-muted-foreground">{product.manufacturer}</p>
+                          </div>
                         </div>
                       </td>
                       <td className="p-3 text-muted-foreground text-sm">{product.generic_name || '—'}</td>
@@ -364,7 +381,7 @@ export default function InventoryPage() {
                 })}
                 {filtered.length === 0 && !loading && (
                   <tr><td colSpan={9}>
-                    <EmptyState icon={<Package className="w-8 h-8 text-muted-foreground" />} title="No products found" description="Add your first product to get started" action={<Button onClick={() => setShowAddModal(true)}>Add Product</Button>} />
+                    <EmptyState icon={<Package className="w-8 h-8 text-muted-foreground" />} title="No products found" description="Add your first product to get started" action={<Button onClick={openAddModal}>Add Product</Button>} />
                   </td></tr>
                 )}
               </tbody>
@@ -375,6 +392,7 @@ export default function InventoryPage() {
         {/* Add Modal */}
         <Modal open={showAddModal} onClose={() => setShowAddModal(false)} title="Add New Product" size="lg">
           <form className="space-y-4" onSubmit={handleAdd}>
+            <ImageUploader value={addImageUrl} onChange={setAddImageUrl} previewSize="h-28" />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input label="Product Name" id="name" placeholder="e.g. Amoxicillin 500mg" required />
               <Input label="Generic Name" id="generic" placeholder="e.g. Amoxicillin" required />
@@ -421,6 +439,7 @@ export default function InventoryPage() {
         {/* Edit Modal */}
         <Modal open={showEditModal} onClose={() => setShowEditModal(false)} title={`Edit — ${editProduct.name}`} size="lg">
           <form className="space-y-4" onSubmit={saveEdit}>
+            <ImageUploader value={editProduct.image_url || null} onChange={(img) => setEditProduct({ ...editProduct, image_url: img })} previewSize="h-28" />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input label="Product Name" id="ename" value={editProduct.name || ''} onChange={e => setEditProduct({ ...editProduct, name: e.target.value })} required />
               <Input label="Generic Name" id="egeneric" value={editProduct.generic_name || ''} onChange={e => setEditProduct({ ...editProduct, generic_name: e.target.value })} required />
@@ -483,6 +502,15 @@ export default function InventoryPage() {
         <Modal open={showDetailModal} onClose={() => setShowDetailModal(false)} title="Product Details" size="md">
           {selectedProduct && (
             <div className="space-y-4">
+              {selectedProduct.image_url ? (
+                <div className="flex justify-center">
+                  <img src={selectedProduct.image_url} alt={selectedProduct.name} className="h-44 w-44 object-cover rounded-xl border border-border bg-muted" />
+                </div>
+              ) : (
+                <div className="flex justify-center py-6">
+                  <Package className="w-16 h-16 text-muted-foreground" />
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div><p className="text-muted-foreground">Name</p><p className="font-medium">{selectedProduct.name}</p></div>
                 <div><p className="text-muted-foreground">Generic</p><p className="font-medium">{selectedProduct.generic_name}</p></div>

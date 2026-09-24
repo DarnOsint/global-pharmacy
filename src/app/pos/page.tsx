@@ -351,6 +351,15 @@ ${settings.logoBase64 ? `<div class="logo"><img src="${settings.logoBase64}" /><
                       {daysLeft > 0 && daysLeft <= 30 && (
                         <span className="absolute top-1 left-1 bg-orange-500 text-white text-[10px] px-1.5 py-0.5 rounded font-medium">{daysLeft}d left</span>
                       )}
+                      <div className="h-20 rounded-lg bg-gray-100 overflow-hidden mb-2">
+                        {product.image_url ? (
+                          <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Package className="w-8 h-8 text-gray-300" />
+                          </div>
+                        )}
+                      </div>
                       <div className="font-semibold text-sm leading-tight mb-1 line-clamp-2">{product.name}</div>
                       <div className="text-xs text-gray-500 mb-1">{product.manufacturer}</div>
                       <div className="text-xs text-gray-400 mb-2">SKU: {product.sku}</div>
@@ -418,6 +427,13 @@ ${settings.logoBase64 ? `<div class="logo"><img src="${settings.logoBase64}" /><
                     const itemTotal = convertedPrice * item.quantity;
                     return (
                       <div key={item.product.id} className="p-3 flex gap-2">
+                        <div className="w-10 h-10 rounded-lg bg-gray-100 overflow-hidden shrink-0">
+                          {item.product.image_url ? (
+                            <img src={item.product.image_url} alt={item.product.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center"><Package className="w-4 h-4 text-gray-300" /></div>
+                          )}
+                        </div>
                         <div className="flex-1 min-w-0">
                           <div className="font-medium text-sm truncate">{item.product.name}</div>
                           <div className="text-xs text-gray-500">
