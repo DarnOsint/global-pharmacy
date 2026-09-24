@@ -114,7 +114,32 @@ export default function ExpensesPage() {
               <input type="text" placeholder="Search expenses..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10 pr-4 py-2 rounded-lg border border-border text-sm w-64 focus:outline-none focus:ring-2 focus:ring-primary" />
             </div>
           </CardHeader>
-          <div className="overflow-x-auto">
+          <div className="md:hidden divide-y divide-border">
+            {filtered.map((expense) => (
+              <div key={expense.id} className="p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${categoryColors[expense.category] || categoryColors.other}`}>{expense.category}</span>
+                    <p className="text-sm font-medium mt-1.5 truncate">{expense.description}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{formatDate(expense.date)}</p>
+                  </div>
+                  <span className="font-bold text-sm shrink-0">{formatCurrencyPair(expense.amount, (expense as any).currency || 'SSP', settings.exchangeRate)}</span>
+                </div>
+                <div className="flex items-center justify-end gap-1 mt-2 pt-2 border-t border-border">
+                  <button onClick={() => { setSelected(expense); setShowDetail(true); }} className="p-2 rounded-lg hover:bg-muted" title="View"><Eye className="w-4 h-4" /></button>
+                  {isAdmin && <button onClick={() => openEdit(expense)} className="p-2 rounded-lg hover:bg-muted" title="Edit"><Edit2 className="w-4 h-4" /></button>}
+                  {isAdmin && <button onClick={() => handleDelete(expense.id)} className="p-2 rounded-lg hover:bg-red-50 text-danger" title="Delete"><Trash2 className="w-4 h-4" /></button>}
+                </div>
+              </div>
+            ))}
+            {filtered.length === 0 && !loading && (
+              <div className="p-4">
+                <EmptyState icon={<CreditCard className="w-8 h-8 text-muted-foreground" />} title="No expenses found" description="Add your first expense" />
+              </div>
+            )}
+          </div>
+
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/50">

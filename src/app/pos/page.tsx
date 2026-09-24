@@ -39,6 +39,7 @@ export default function POSPage() {
   const [currency, setCurrency] = useState<'SSP' | 'USD'>('SSP');
   const [showPayment, setShowPayment] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
   const [completedSale, setCompletedSale] = useState<{ sale: Sale; items: CartItem[] } | null>(null);
   const [processing, setProcessing] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -258,9 +259,120 @@ ${settings.logoBase64 ? `<div class="logo"><img src="${settings.logoBase64}" /><
     return () => window.removeEventListener('keydown', handleKey);
   }, [showPayment, showReceipt]);
 
+  const renderCartPanel = () => (
+    <>
+      <div className="p-3 border-b border-gray-200 flex items-center gap-2 shrink-0">
+        <ShoppingCart className="w-5 h-5 text-primary" />
+        <span className="font-bold text-sm">Cart</span>
+        <span className="text-xs text-gray-500">({itemCount} items)</span>
+        <div className="flex-1" />
+        {cart.length > 0 && (
+          <button onClick={() => setCart([])} className="text-xs text-red-500 hover:text-red-700">Clear</button>
+        )}
+        <button onClick={() => setCartOpen(false)} className="lg:hidden p-1 rounded-lg hover:bg-gray-100">
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+
+      <div className="p-3 border-b border-gray-200 flex gap-2 shrink-0">
+        <div className="flex rounded-lg border border-gray-300 overflow-hidden flex-1">
+          <button
+            onClick={() => setCurrency('SSP')}
+            className={`flex-1 py-1.5 text-xs font-medium ${currency === 'SSP' ? 'bg-primary text-white' : 'bg-gray-50 text-gray-600'}`}
+          >
+            SSP
+          </button>
+          <button
+            onClick={() => setCurrency('USD')}
+            className={`flex-1 py-1.5 text-xs font-medium ${currency === 'USD' ? 'bg-primary text-white' : 'bg-gray-50 text-gray-600'}`}
+          >
+            USD
+          </button>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
+        {cart.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-gray-400">
+            <ShoppingCart className="w-10 h-10 mb-2" />
+            <p className="text-sm">Tap a product to add</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {cart.map(item => {
+              const convertedPrice = convertCurrency(item.product.unit_price, item.product.currency, currency, settings.exchangeRate);
+              const itemTotal = convertedPrice * item.quantity;
+              return (
+                <div key={item.product.id} className="p-3 flex gap-2">
+                  <div className="w-10 h-10 rounded-lg bg-gray-100 overflow-hidden shrink-0">
+                    {item.product.image_url ? (
+                      <img src={item.product.image_url} alt={item.product.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center"><Package className="w-4 h-4 text-gray-300" /></div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm truncate">{item.product.name}</div>
+                    <div className="text-xs text-gray-500">
+                      {formatCurrency(convertedPrice, currency)} each
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => updateCartQty(item.product.id, -1)}
+                      className="w-7 h-7 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-100 active:bg-gray-200"
+                    >
+                      <Minus className="w-3 h-3" />
+                    </button>
+                    <span className="w-8 text-center text-sm font-bold">{item.quantity}</span>
+                    <button
+                      onClick={() => updateCartQty(item.product.id, 1)}
+                      className="w-7 h-7 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-100 active:bg-gray-200"
+                    >
+                      <Plus className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="font-bold text-sm">
+                      {formatCurrency(itemTotal, currency)}
+                    </div>
+                    <button
+                      onClick={() => removeFromCart(item.product.id)}
+                      className="text-red-400 hover:text-red-600 mt-0.5"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <div className="border-t border-gray-200 p-3 shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="flex justify-between text-sm mb-1">
+          <span className="text-gray-500">Subtotal</span>
+          <span className="font-medium">{formatCurrency(subtotal, currency)}</span>
+        </div>
+        <div className="flex justify-between text-lg font-bold mb-3">
+          <span>Total</span>
+          <span className="text-primary">{formatCurrency(subtotal, currency)}</span>
+        </div>
+        <button
+          onClick={() => setShowPayment(true)}
+          disabled={cart.length === 0}
+          className="w-full py-3.5 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.99]"
+        >
+          Pay {cart.length > 0 ? formatCurrency(subtotal, currency) : ''}
+        </button>
+      </div>
+    </>
+  );
+
   return (
     <AuthGuard>
-      <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
+      <div className="h-[100dvh] flex flex-col bg-gray-50 overflow-hidden">
         {/* Top Bar */}
         <header className="h-14 bg-primary text-white flex items-center px-4 gap-4 shrink-0">
           <div className="flex items-center gap-2">
@@ -282,7 +394,7 @@ ${settings.logoBase64 ? `<div class="logo"><img src="${settings.logoBase64}" /><
             title="Log out"
           >
             <LogOut className="w-4 h-4" />
-            Log out
+            <span className="hidden sm:inline">Log out</span>
           </button>
         </header>
 
@@ -290,8 +402,8 @@ ${settings.logoBase64 ? `<div class="logo"><img src="${settings.logoBase64}" /><
           {/* Left: Product Grid */}
           <div className="flex-1 flex flex-col overflow-hidden">
             {/* Search + Filters */}
-            <div className="p-3 bg-white border-b border-gray-200 flex flex-col sm:flex-row gap-2 shrink-0">
-              <div className="relative flex-1">
+            <div className="p-3 bg-white border-b border-gray-200 flex flex-col gap-2 shrink-0">
+              <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   ref={searchRef}
@@ -299,15 +411,15 @@ ${settings.logoBase64 ? `<div class="logo"><img src="${settings.logoBase64}" /><
                   placeholder="Search products... (press /)"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                  className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                 />
               </div>
-              <div className="flex gap-1 flex-wrap">
+              <div className="flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {categories.map(c => (
                   <button
                     key={c}
                     onClick={() => setCategory(c)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors shrink-0 ${
                       category === c
                         ? 'bg-primary text-white'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -320,14 +432,14 @@ ${settings.logoBase64 ? `<div class="logo"><img src="${settings.logoBase64}" /><
             </div>
 
             {/* Product Grid */}
-            <div className="flex-1 overflow-y-auto p-3">
+            <div className="flex-1 overflow-y-auto p-3 pb-28 lg:pb-3">
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
                 {filtered.map(product => {
                   const daysLeft = daysUntilExpiry(product.expiry_date);
                   const inCart = cart.find(c => c.product.id === product.id);
                   const outOfStock = product.quantity_in_stock <= 0;
                   const lowStock = product.quantity_in_stock <= product.reorder_level;
-                  return (
+  return (
                     <button
                       key={product.id}
                       onClick={() => !outOfStock && addToCart(product)}
@@ -382,115 +494,53 @@ ${settings.logoBase64 ? `<div class="logo"><img src="${settings.logoBase64}" /><
             </div>
           </div>
 
-          {/* Right: Cart Panel */}
-          <div className="w-80 lg:w-96 bg-white border-l border-gray-200 flex flex-col shrink-0">
-            {/* Cart Header */}
-            <div className="p-3 border-b border-gray-200 flex items-center gap-2">
-              <ShoppingCart className="w-5 h-5 text-primary" />
-              <span className="font-bold text-sm">Cart</span>
-              <span className="text-xs text-gray-500">({itemCount} items)</span>
-              <div className="flex-1" />
-              {cart.length > 0 && (
-                <button onClick={() => setCart([])} className="text-xs text-red-500 hover:text-red-700">Clear</button>
-              )}
-            </div>
+          {/* Right: Cart Panel (desktop) */}
+          <div className="hidden lg:flex w-96 bg-white border-l border-gray-200 flex flex-col shrink-0">
+            {renderCartPanel()}
+          </div>
+        </div>
 
-            {/* Currency + Payment Toggle */}
-            <div className="p-3 border-b border-gray-200 flex gap-2">
-              <div className="flex rounded-lg border border-gray-300 overflow-hidden flex-1">
-                <button
-                  onClick={() => setCurrency('SSP')}
-                  className={`flex-1 py-1.5 text-xs font-medium ${currency === 'SSP' ? 'bg-primary text-white' : 'bg-gray-50 text-gray-600'}`}
-                >
-                  SSP
-                </button>
-                <button
-                  onClick={() => setCurrency('USD')}
-                  className={`flex-1 py-1.5 text-xs font-medium ${currency === 'USD' ? 'bg-primary text-white' : 'bg-gray-50 text-gray-600'}`}
-                >
-                  USD
-                </button>
+        {/* Floating Cart Bar (mobile) */}
+        <div
+          className="lg:hidden fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white shadow-[0_-4px_16px_rgba(0,0,0,0.1)] pb-[env(safe-area-inset-bottom)]"
+        >
+          <div className="px-4 py-3 flex items-center gap-3">
+            <div className="flex-1 min-w-0">
+              <div className="text-[11px] text-gray-500 leading-tight">
+                {itemCount} item{itemCount === 1 ? '' : 's'}
+              </div>
+              <div className="font-bold text-lg text-primary truncate">
+                {formatCurrency(subtotal, currency)}
               </div>
             </div>
+            <button
+              onClick={() => setCartOpen(true)}
+              className="flex items-center gap-2 pl-4 pr-5 py-3 rounded-xl bg-primary text-white font-bold text-sm shadow-md active:scale-95 transition-transform"
+            >
+              <ShoppingCart className="w-4 h-4" />
+              View Cart
+            </button>
+          </div>
+        </div>
 
-            {/* Cart Items */}
-            <div className="flex-1 overflow-y-auto">
-              {cart.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                  <ShoppingCart className="w-10 h-10 mb-2" />
-                  <p className="text-sm">Tap a product to add</p>
+        {/* Cart Bottom Sheet (mobile) */}
+        <div className={`lg:hidden fixed inset-0 z-50 ${cartOpen ? '' : 'pointer-events-none'}`}>
+          {cartOpen && (
+            <div className="absolute inset-0 bg-black/40" onClick={() => setCartOpen(false)} />
+          )}
+          <div
+            className={`absolute inset-x-0 bottom-0 h-[92dvh] bg-white rounded-t-2xl overflow-hidden flex flex-col transition-transform duration-300 ease-out ${
+              cartOpen ? 'translate-y-0' : 'translate-y-full'
+            }`}
+          >
+            {cartOpen && (
+              <>
+                <div className="shrink-0 pt-2 pb-1 flex justify-center">
+                  <div className="h-1.5 w-12 rounded-full bg-gray-300" />
                 </div>
-              ) : (
-                <div className="divide-y divide-gray-100">
-                  {cart.map(item => {
-                    const convertedPrice = convertCurrency(item.product.unit_price, item.product.currency, currency, settings.exchangeRate);
-                    const itemTotal = convertedPrice * item.quantity;
-                    return (
-                      <div key={item.product.id} className="p-3 flex gap-2">
-                        <div className="w-10 h-10 rounded-lg bg-gray-100 overflow-hidden shrink-0">
-                          {item.product.image_url ? (
-                            <img src={item.product.image_url} alt={item.product.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center"><Package className="w-4 h-4 text-gray-300" /></div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-sm truncate">{item.product.name}</div>
-                          <div className="text-xs text-gray-500">
-                            {formatCurrency(convertedPrice, currency)} each
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            onClick={() => updateCartQty(item.product.id, -1)}
-                            className="w-7 h-7 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-100"
-                          >
-                            <Minus className="w-3 h-3" />
-                          </button>
-                          <span className="w-8 text-center text-sm font-bold">{item.quantity}</span>
-                          <button
-                            onClick={() => updateCartQty(item.product.id, 1)}
-                            className="w-7 h-7 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-100"
-                          >
-                            <Plus className="w-3 h-3" />
-                          </button>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <div className="font-bold text-sm">
-                            {formatCurrency(itemTotal, currency)}
-                          </div>
-                          <button
-                            onClick={() => removeFromCart(item.product.id)}
-                            className="text-red-400 hover:text-red-600 mt-0.5"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Cart Footer */}
-            <div className="border-t border-gray-200 p-3 shrink-0">
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-gray-500">Subtotal</span>
-                <span className="font-medium">{formatCurrency(subtotal, currency)}</span>
-              </div>
-              <div className="flex justify-between text-lg font-bold mb-3">
-                <span>Total</span>
-                <span className="text-primary">{formatCurrency(subtotal, currency)}</span>
-              </div>
-              <button
-                onClick={() => cart.length > 0 && setShowPayment(true)}
-                disabled={cart.length === 0}
-                className="w-full py-3 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Pay {cart.length > 0 ? formatCurrency(subtotal, currency) : ''}
-              </button>
-            </div>
+                {renderCartPanel()}
+              </>
+            )}
           </div>
         </div>
 

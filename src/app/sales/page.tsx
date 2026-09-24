@@ -196,7 +196,36 @@ export default function SalesPage() {
               </div>
             </div>
           </CardHeader>
-          <div className="overflow-x-auto">
+          <div className="md:hidden divide-y divide-border">
+            {paged.map((sale) => (
+              <div key={sale.id} className="p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-mono text-xs font-medium">{sale.invoice_number}</p>
+                    <p className="text-sm font-medium truncate">{sale.notes || 'Walk-in'}</p>
+                  </div>
+                  <span className="font-bold text-sm shrink-0">{formatCurrencyPair(sale.total, sale.currency || 'SSP', settings.exchangeRate)}</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                  <Badge variant="default">{sale.payment_method}</Badge>
+                  <Badge variant={sale.status === 'completed' ? 'success' : sale.status === 'returned' ? 'danger' : 'warning'}>{sale.status}</Badge>
+                  <span className="text-xs text-muted-foreground ml-auto">{new Date(sale.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+                <div className="flex items-center justify-end gap-1 mt-2 pt-2 border-t border-border">
+                  <button onClick={() => { setSelected(sale); setShowDetail(true); }} className="p-2 rounded-lg hover:bg-muted" title="View"><Eye className="w-4 h-4" /></button>
+                  {isAdmin && <button onClick={() => openEdit(sale)} className="p-2 rounded-lg hover:bg-muted" title="Edit"><Edit2 className="w-4 h-4" /></button>}
+                  {isAdmin && <button onClick={() => handleDelete(sale.id)} className="p-2 rounded-lg hover:bg-red-50 text-danger" title="Delete"><Trash2 className="w-4 h-4" /></button>}
+                </div>
+              </div>
+            ))}
+            {filtered.length === 0 && !loading && (
+              <div className="p-4">
+                <EmptyState icon={<ShoppingCart className="w-8 h-8 text-muted-foreground" />} title="No sales found" description="Record your first sale" />
+              </div>
+            )}
+          </div>
+
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/50">

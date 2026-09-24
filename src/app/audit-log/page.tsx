@@ -143,7 +143,38 @@ export default function AuditLogPage() {
           </div>
 
           <Card>
-            <div className="overflow-x-auto">
+            <div className="md:hidden divide-y divide-border">
+            {loading && (
+              <div className="p-8 text-center text-muted-foreground text-sm">Loading audit trail…</div>
+            )}
+            {!loading && filtered.length === 0 && (
+              <div className="p-8 text-center text-muted-foreground text-sm">No audit records match your filters.</div>
+            )}
+            {filtered.map((log) => (
+              <div key={log.id} className="p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm truncate">{log.staff_name}</p>
+                    <Badge variant={log.staff_role === 'admin' ? 'info' : log.staff_role === 'pharmacist' ? 'success' : log.staff_role === 'cashier' ? 'warning' : 'default'}>
+                      {log.staff_role.replace('_', ' ')}
+                    </Badge>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-xs font-medium">{formatDate(log.created_at)}</div>
+                    <div className="text-[11px] text-muted-foreground">{new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                  <Badge variant={actionColors[log.action] || 'default'}>{actionLabels[log.action] || log.action}</Badge>
+                  <Badge variant="default">{entityLabels[log.entity_type] || log.entity_type}</Badge>
+                  {log.entity_name && <span className="text-xs font-medium truncate">— {log.entity_name}</span>}
+                </div>
+                {log.description && <p className="text-xs text-muted-foreground mt-1.5">{log.description}</p>}
+              </div>
+            ))}
+          </div>
+
+          <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-muted/50">

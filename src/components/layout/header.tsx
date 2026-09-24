@@ -55,7 +55,7 @@ export function Header() {
           className="flex items-center gap-1.5 text-xs text-accent bg-accent/10 px-3 py-1.5 rounded-full hover:bg-accent/20 transition-colors disabled:opacity-50"
         >
           <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} />
-          {syncing ? 'Syncing...' : `${pendingCount} pending`}
+          <span className="hidden sm:inline">{syncing ? 'Syncing...' : `${pendingCount} pending`}</span>
         </button>
       )}
 
@@ -67,7 +67,7 @@ export function Header() {
           className="flex items-center gap-1.5 text-xs text-danger bg-danger/10 px-3 py-1.5 rounded-full hover:bg-danger/20 transition-colors disabled:opacity-50"
         >
           <AlertTriangle className="w-3 h-3" />
-          {failedCount} failed
+          <span className="hidden sm:inline">{failedCount} failed</span>
         </button>
       )}
 
@@ -79,7 +79,7 @@ export function Header() {
           className="flex items-center gap-1.5 text-xs text-warning bg-warning/10 px-3 py-1.5 rounded-full hover:bg-warning/20 transition-colors disabled:opacity-50"
         >
           <AlertTriangle className="w-3 h-3" />
-          Sync error
+          <span className="hidden sm:inline">Sync error</span>
         </button>
       )}
 

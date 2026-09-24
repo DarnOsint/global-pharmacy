@@ -163,7 +163,21 @@ export default function ReportsPage() {
               <CardTitle>Top Selling Products</CardTitle>
               <Button variant="outline" size="sm" onClick={exportSales}><Download className="w-4 h-4 mr-1" /> Sales</Button>
             </CardHeader>
-            <div className="overflow-x-auto">
+            <div className="md:hidden divide-y divide-border">
+              {topProducts.length > 0 ? topProducts.slice(0, 5).map((p, i) => (
+                <div key={i} className="flex items-center gap-3 p-3">
+                  <Badge variant="info">{i + 1}</Badge>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{p.name}</p>
+                    <p className="text-xs text-muted-foreground">{p.sold} units</p>
+                  </div>
+                  <span className="text-sm font-medium shrink-0">{formatCurrency(p.revenue, 'SSP')}</span>
+                </div>
+              )) : (
+                <p className="p-6 text-center text-muted-foreground text-sm">No sales data yet</p>
+              )}
+            </div>
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-muted/50">
@@ -194,7 +208,18 @@ export default function ReportsPage() {
               <CardTitle>Slow-Moving Products</CardTitle>
               <Button variant="outline" size="sm" onClick={exportInventory}><Download className="w-4 h-4 mr-1" /> Inventory</Button>
             </CardHeader>
-            <div className="overflow-x-auto">
+            <div className="md:hidden divide-y divide-border">
+              {slowProducts.filter(p => p.stock > 0).slice(0, 5).map((p, i) => (
+                <div key={i} className="flex items-center gap-3 p-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{p.name}</p>
+                    <p className="text-xs text-muted-foreground">Last sold {p.lastSold ? formatDate(p.lastSold) : 'Never'}</p>
+                  </div>
+                  <span className="text-sm font-medium shrink-0">{p.stock} in stock</span>
+                </div>
+              ))}
+            </div>
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-muted/50">
@@ -220,7 +245,20 @@ export default function ReportsPage() {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Low Stock Items</CardTitle>
             </CardHeader>
-            <div className="overflow-x-auto">
+            <div className="md:hidden divide-y divide-border">
+              {lowStock.length > 0 ? lowStock.map(p => (
+                <div key={p.id} className="flex items-center gap-3 p-3 bg-red-50/40">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{p.name}</p>
+                    <p className="text-xs text-muted-foreground">Reorder level: {p.reorder_level}</p>
+                  </div>
+                  <span className="text-sm font-bold text-red-600 shrink-0">{p.quantity_in_stock} left</span>
+                </div>
+              )) : (
+                <p className="p-6 text-center text-muted-foreground text-sm">All stock levels healthy</p>
+              )}
+            </div>
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-muted/50">

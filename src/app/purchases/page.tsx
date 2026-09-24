@@ -161,7 +161,35 @@ export default function PurchasesPage() {
               </div>
             </div>
           </CardHeader>
-          <div className="overflow-x-auto">
+          <div className="md:hidden divide-y divide-border">
+            {paged.map((purchase) => (
+              <div key={purchase.id} className="p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-mono text-xs font-medium">{purchase.invoice_number}</p>
+                    <p className="text-sm font-medium truncate">{getSupplierName(purchase.supplier_id)}</p>
+                  </div>
+                  <span className="font-bold text-sm shrink-0">{formatCurrencyPair(purchase.total, purchase.currency || 'SSP', settings.exchangeRate)}</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                  <Badge variant={purchase.status === 'received' ? 'success' : purchase.status === 'ordered' ? 'warning' : 'danger'}>{purchase.status}</Badge>
+                  <span className="text-xs text-muted-foreground ml-auto">{new Date(purchase.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+                <div className="flex items-center justify-end gap-1 mt-2 pt-2 border-t border-border">
+                  <button onClick={() => { setSelected(purchase); setShowDetail(true); }} className="p-2 rounded-lg hover:bg-muted" title="View"><Eye className="w-4 h-4" /></button>
+                  {isAdmin && <button onClick={() => openEdit(purchase)} className="p-2 rounded-lg hover:bg-muted" title="Edit"><Edit2 className="w-4 h-4" /></button>}
+                  {isAdmin && <button onClick={() => handleDelete(purchase.id)} className="p-2 rounded-lg hover:bg-red-50 text-danger" title="Delete"><Trash2 className="w-4 h-4" /></button>}
+                </div>
+              </div>
+            ))}
+            {filtered.length === 0 && !loading && (
+              <div className="p-4">
+                <EmptyState icon={<Receipt className="w-8 h-8 text-muted-foreground" />} title="No purchases found" description="Create your first purchase order" />
+              </div>
+            )}
+          </div>
+
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/50">

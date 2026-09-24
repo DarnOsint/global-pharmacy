@@ -405,7 +405,24 @@ export default function DashboardPage() {
                     No sales recorded yet
                   </p>
                 ) : (
-                  <div className="overflow-x-auto">
+                  <>
+                  <div className="md:hidden divide-y divide-border">
+                    {topSelling.slice(0, 5).map((item, i) => (
+                      <div key={i} className="flex items-center gap-3 py-2.5">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-50 text-primary text-xs font-bold">
+                          {i + 1}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-sm truncate">{item.name}</p>
+                          <p className="text-xs text-muted-foreground">{item.sold} units sold</p>
+                        </div>
+                        <span className="font-medium text-sm shrink-0">
+                          {formatCurrency(item.revenue, 'SSP')}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b border-border">
@@ -447,6 +464,7 @@ export default function DashboardPage() {
                       </tbody>
                     </table>
                   </div>
+                  </>
                 )}
               </CardContent>
             </Card>

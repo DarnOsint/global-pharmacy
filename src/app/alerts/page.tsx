@@ -96,7 +96,27 @@ export default function AlertsPage() {
         {filterDays !== null && filtered.length > 0 && (
           <Card>
             <CardHeader><CardTitle>Expiring within {filterDays} days</CardTitle></CardHeader>
-            <div className="overflow-x-auto">
+            <div className="md:hidden divide-y divide-border">
+              {filtered.sort((a, b) => daysUntilExpiry(a.expiry_date) - daysUntilExpiry(b.expiry_date)).map(p => {
+                const days = daysUntilExpiry(p.expiry_date);
+                return (
+                  <div key={p.id} className="p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm truncate">{p.name}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{p.batch_number}</p>
+                      </div>
+                      <Badge variant={days <= 7 ? 'danger' : days <= 30 ? 'warning' : 'info'}>{days}d</Badge>
+                    </div>
+                    <div className="mt-2 space-y-1.5 text-xs text-muted-foreground">
+                      <span className="flex items-center justify-between gap-2"><span>Stock</span><span className="font-medium text-foreground">{p.quantity_in_stock}</span></span>
+                      <span className="flex items-center justify-between gap-2"><span>Expiry</span><span className="font-medium text-foreground">{formatDate(p.expiry_date)}</span></span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-muted/50">
@@ -129,7 +149,24 @@ export default function AlertsPage() {
         {expired.length > 0 && (
           <Card className="border-red-200">
             <CardHeader><CardTitle className="text-red-600 flex items-center gap-2"><AlertTriangle className="w-5 h-5" /> Expired ({expired.length})</CardTitle></CardHeader>
-            <div className="overflow-x-auto">
+            <div className="md:hidden divide-y divide-border">
+              {expired.map(p => (
+                <div key={p.id} className="p-3 bg-red-50/40">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm truncate">{p.name}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{p.batch_number}</p>
+                    </div>
+                    <span className="text-sm font-bold text-red-600 shrink-0">{Math.abs(daysUntilExpiry(p.expiry_date))}d</span>
+                  </div>
+                  <div className="mt-2 space-y-1.5 text-xs text-muted-foreground">
+                    <span className="flex items-center justify-between gap-2"><span>Stock</span><span className="font-medium text-foreground">{p.quantity_in_stock}</span></span>
+                    <span className="flex items-center justify-between gap-2"><span>Expired on</span><span className="font-medium text-red-600">{formatDate(p.expiry_date)}</span></span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-red-50">
@@ -159,7 +196,28 @@ export default function AlertsPage() {
         {critical.length > 0 && (
           <Card className="border-orange-200">
             <CardHeader><CardTitle className="text-orange-600 flex items-center gap-2"><Clock className="w-5 h-5" /> Critical — Past Alert Threshold ({critical.length})</CardTitle></CardHeader>
-            <div className="overflow-x-auto">
+            <div className="md:hidden divide-y divide-border">
+              {critical.sort((a, b) => daysUntilExpiry(a.expiry_date) - daysUntilExpiry(b.expiry_date)).map(p => {
+                const days = daysUntilExpiry(p.expiry_date);
+                return (
+                  <div key={p.id} className="p-3 bg-orange-50/40">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm truncate">{p.name}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{p.batch_number}</p>
+                      </div>
+                      <Badge variant="warning">{days}d</Badge>
+                    </div>
+                    <div className="mt-2 space-y-1.5 text-xs text-muted-foreground">
+                      <span className="flex items-center justify-between gap-2"><span>Stock</span><span className="font-medium text-foreground">{p.quantity_in_stock}</span></span>
+                      <span className="flex items-center justify-between gap-2"><span>Expiry</span><span className="font-medium text-foreground">{formatDate(p.expiry_date)}</span></span>
+                      <span className="flex items-center justify-between gap-2"><span>Alert threshold</span><span className="font-medium text-foreground">{getAlertDays(p)}d</span></span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-orange-50">
@@ -194,7 +252,27 @@ export default function AlertsPage() {
         {warning.length > 0 && (
           <Card className="border-yellow-200">
             <CardHeader><CardTitle className="text-yellow-600 flex items-center gap-2"><AlertTriangle className="w-5 h-5" /> Warning — Approaching Threshold ({warning.length})</CardTitle></CardHeader>
-            <div className="overflow-x-auto">
+            <div className="md:hidden divide-y divide-border">
+              {warning.sort((a, b) => daysUntilExpiry(a.expiry_date) - daysUntilExpiry(b.expiry_date)).map(p => {
+                const days = daysUntilExpiry(p.expiry_date);
+                return (
+                  <div key={p.id} className="p-3 bg-yellow-50/40">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm truncate">{p.name}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{p.batch_number}</p>
+                      </div>
+                      <Badge variant="info">{days}d</Badge>
+                    </div>
+                    <div className="mt-2 space-y-1.5 text-xs text-muted-foreground">
+                      <span className="flex items-center justify-between gap-2"><span>Stock</span><span className="font-medium text-foreground">{p.quantity_in_stock}</span></span>
+                      <span className="flex items-center justify-between gap-2"><span>Expiry</span><span className="font-medium text-foreground">{formatDate(p.expiry_date)}</span></span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-yellow-50">

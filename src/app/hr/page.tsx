@@ -259,7 +259,33 @@ export default function HRPage() {
 
         {activeTab === 'staff' && (
           <Card>
-            <div className="overflow-x-auto">
+            <div className="md:hidden divide-y divide-border">
+              {staffList.map((staff) => (
+                <div key={staff.id} className="p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm truncate">{staff.first_name} {staff.last_name}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5 truncate">{staff.phone}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="font-bold text-sm">{formatCurrency(staff.salary, 'SSP')}</p>
+                      <p className="text-[11px] text-muted-foreground">since {formatDate(staff.hire_date)}</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                    <Badge variant={roleColor(staff.role)}>{roleLabel(staff.role)}</Badge>
+                    <Badge variant={staff.is_active ? 'success' : 'danger'}>{staff.is_active ? 'Active' : 'Inactive'}</Badge>
+                    {isAdmin && (
+                      <div className="flex items-center gap-1 ml-auto">
+                        <button onClick={() => { setEditStaff(staff); setShowEditStaff(true); }} className="p-2 rounded-lg hover:bg-muted" title="Edit"><Edit2 className="w-4 h-4" /></button>
+                        <button onClick={() => setDeleteStaffTarget(staff)} className="p-2 rounded-lg hover:bg-red-50 text-danger" title="Delete"><Trash2 className="w-4 h-4" /></button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-muted/50">
@@ -299,7 +325,32 @@ export default function HRPage() {
 
         {activeTab === 'payroll' && (
           <Card>
-            <div className="overflow-x-auto">
+            <div className="md:hidden divide-y divide-border">
+              {payrollList.map((p) => (
+                <div key={p.id} className="p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm truncate">{getStaffName(p.staff_id)}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{formatDate(p.period_start)} → {formatDate(p.period_end)}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="font-bold text-sm text-primary">{formatCurrency(p.net_pay, 'SSP')}</p>
+                      <Badge variant={p.status === 'paid' ? 'success' : 'warning'}>{p.status}</Badge>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2 text-xs text-muted-foreground">
+                    <span>Base <span className="font-medium text-foreground">{formatCurrency(p.base_salary, 'SSP')}</span></span>
+                    <span className="text-success">+{formatCurrency(p.allowances, 'SSP')}</span>
+                    <span className="text-danger">-{formatCurrency(p.deductions, 'SSP')}</span>
+                    {p.paid_at && <span>· Paid {formatDate(p.paid_at)}</span>}
+                    {showPayrollHeader && (
+                      <button onClick={() => { setEditPayroll(p); setShowEditPayroll(true); }} className="p-2 rounded-lg hover:bg-muted ml-auto" title="Edit"><Edit2 className="w-4 h-4" /></button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-muted/50">

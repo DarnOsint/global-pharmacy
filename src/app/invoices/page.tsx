@@ -110,7 +110,34 @@ export default function InvoicesPage() {
         </Card>
 
         <Card>
-          <div className="overflow-x-auto">
+          <div className="md:hidden divide-y divide-border">
+            {filtered.map(s => (
+              <div key={s.id} className="p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-mono text-xs font-medium">{s.invoice_number}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{formatDate(s.created_at)}</p>
+                  </div>
+                  <span className="font-bold text-sm shrink-0">{formatCurrency(s.total, s.currency)}</span>
+                </div>
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-border">
+                  <div className="flex items-center gap-1.5">
+                    <Badge variant={payColor(s.payment_method)}>{s.payment_method}</Badge>
+                    <Badge variant={statusColor(s.status)}>{s.status}</Badge>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={() => viewInvoice(s)}><Eye className="w-4 h-4" /> View</Button>
+                </div>
+              </div>
+            ))}
+            {filtered.length === 0 && (
+              <div className="p-8 text-center text-muted-foreground">
+                <FileText className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                {search ? 'No invoices match' : 'No invoices yet'}
+              </div>
+            )}
+          </div>
+
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/50">

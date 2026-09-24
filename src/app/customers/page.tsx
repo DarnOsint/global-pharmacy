@@ -95,7 +95,35 @@ export default function CustomersPage() {
         </Card>
 
         <Card>
-          <div className="overflow-x-auto">
+          <div className="md:hidden divide-y divide-border">
+            {filtered.map(c => (
+              <div key={c.id} className="p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{c.name}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Member since {formatDate(c.created_at)}</p>
+                  </div>
+                  <div className="flex gap-1 shrink-0">
+                    <Button variant="ghost" size="sm" onClick={() => openEdit(c)}><Edit className="w-4 h-4" /></Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleDelete(c.id)} className="text-red-500 hover:text-red-700"><Trash2 className="w-4 h-4" /></Button>
+                  </div>
+                </div>
+                <div className="mt-1.5 space-y-1 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 shrink-0" /><span className="truncate">{c.phone}</span></span>
+                  {c.email && <span className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5 shrink-0" /><span className="truncate">{c.email}</span></span>}
+                  {c.address && <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 shrink-0" /><span className="truncate">{c.address}</span></span>}
+                </div>
+              </div>
+            ))}
+            {filtered.length === 0 && (
+              <div className="p-8 text-center text-muted-foreground">
+                <Users className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                {search ? 'No customers match search' : 'No customers yet'}
+              </div>
+            )}
+          </div>
+
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/50">

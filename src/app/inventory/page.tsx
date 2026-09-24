@@ -317,7 +317,54 @@ export default function InventoryPage() {
         </div>
 
         <Card>
-          <div className="overflow-x-auto">
+          <div className="md:hidden divide-y divide-border">
+            {filtered.map((product) => {
+              const expiryStatus = getExpiryStatus(product.expiry_date);
+              const isLow = product.quantity_in_stock <= product.reorder_level;
+              return (
+                <div key={product.id} className="p-3 flex gap-3 items-start">
+                  <div className="w-12 h-12 rounded-lg border border-border bg-muted shrink-0 overflow-hidden">
+                    {product.image_url ? (
+                      <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center"><Package className="w-5 h-5 text-muted-foreground" /></div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-medium text-sm leading-tight line-clamp-2">{product.name}</p>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button onClick={() => { setSelectedProduct(product); setShowDetailModal(true); }} className="p-2 rounded-lg hover:bg-muted" title="View"><Eye className="w-4 h-4" /></button>
+                        <button onClick={() => openEdit(product)} className="p-2 rounded-lg hover:bg-muted" title="Edit"><Edit2 className="w-4 h-4" /></button>
+                        {isAdmin && <button onClick={() => handleDelete(product.id)} className="p-2 rounded-lg hover:bg-red-50 text-danger" title="Delete"><Trash2 className="w-4 h-4" /></button>}
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <Badge variant="info">{product.category}</Badge>
+                      <Badge variant={isLow ? 'danger' : 'success'}>{product.quantity_in_stock} in stock</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">SKU: {product.sku}{product.product_code ? ` · ${product.product_code}` : ''}</p>
+                    <div className="flex items-center justify-between pt-0.5">
+                      <span className="font-bold text-sm">{formatCurrencyPair(product.unit_price, product.currency, settings.exchangeRate)}</span>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={expiryStatus === 'expired' ? 'danger' : expiryStatus === 'critical' ? 'danger' : expiryStatus === 'warning' ? 'warning' : 'success'}>
+                          {formatDate(product.expiry_date)}
+                        </Badge>
+                        <button onClick={() => openRestock(product)} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-semibold active:scale-95" title="Restock"><PackagePlus className="w-3.5 h-3.5" /></button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            {filtered.length === 0 && !loading && (
+              <div className="p-4">
+                <EmptyState icon={<Package className="w-8 h-8 text-muted-foreground" />} title="No products found" description="Add your first product to get started" action={<Button onClick={openAddModal}>Add Product</Button>} />
+              </div>
+            )}
+          </div>
+
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/50">

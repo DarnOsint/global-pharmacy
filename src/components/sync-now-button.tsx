@@ -80,7 +80,7 @@ export function SyncNowButton({
       title={title}
     >
       {icon}
-      {text}
+      <span className="hidden sm:inline">{text}</span>
     </Button>
   );
 }

@@ -107,7 +107,46 @@ export default function SuppliersPage() {
               <input type="text" placeholder="Search suppliers..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10 pr-4 py-2 rounded-lg border border-border text-sm w-64 focus:outline-none focus:ring-2 focus:ring-primary" />
             </div>
           </CardHeader>
-          <div className="overflow-x-auto">
+          <div className="md:hidden divide-y divide-border">
+            {filtered.map((supplier) => (
+              <div key={supplier.id} className="p-3">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+                    <Truck className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">{supplier.name}</p>
+                        <p className="text-xs text-muted-foreground">{supplier.contact_person}</p>
+                      </div>
+                      <button onClick={() => toggleActive(supplier)} className="shrink-0">
+                        <Badge variant={supplier.is_active ? 'success' : 'danger'}>
+                          {supplier.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </button>
+                    </div>
+                    <div className="mt-1.5 space-y-1 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 shrink-0" /><span className="truncate">{supplier.phone}</span></span>
+                      {supplier.email && <span className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5 shrink-0" /><span className="truncate">{supplier.email}</span></span>}
+                      <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 shrink-0" /><span className="truncate">{supplier.city}</span></span>
+                    </div>
+                    <div className="flex items-center justify-end gap-1 mt-2 pt-2 border-t border-border">
+                      <button onClick={() => openEdit(supplier)} className="p-2 rounded-lg hover:bg-muted" title="Edit"><Edit2 className="w-4 h-4" /></button>
+                      <button onClick={() => handleDelete(supplier.id)} className="p-2 rounded-lg hover:bg-red-50 text-danger" title="Delete"><Trash2 className="w-4 h-4" /></button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {filtered.length === 0 && !loading && (
+              <div className="p-4">
+                <EmptyState icon={<Truck className="w-8 h-8 text-muted-foreground" />} title="No suppliers found" description="Add your first supplier to get started" action={<Button onClick={() => setShowAdd(true)}>Add Supplier</Button>} />
+              </div>
+            )}
+          </div>
+
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/50">
