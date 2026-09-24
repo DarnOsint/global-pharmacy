@@ -463,9 +463,9 @@ ${settings.logoBase64 ? `<div class="logo"><img src="${settings.logoBase64}" /><
                       {daysLeft > 0 && daysLeft <= 30 && (
                         <span className="absolute top-1 left-1 bg-orange-500 text-white text-[10px] px-1.5 py-0.5 rounded font-medium">{daysLeft}d left</span>
                       )}
-                      <div className="h-20 rounded-lg bg-gray-100 overflow-hidden mb-2">
+                      <div className="aspect-square rounded-lg bg-gray-100 overflow-hidden mb-2">
                         {product.image_url ? (
-                          <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                          <img src={product.image_url} alt={product.name} className="w-full h-full object-contain" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
                             <Package className="w-8 h-8 text-gray-300" />
