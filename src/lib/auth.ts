@@ -3,13 +3,21 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { logLogin, logLogout } from '@/lib/audit';
+import { AUTH_STORAGE_KEY } from '@/lib/location';
+
+export interface LocationRef {
+  id: string;
+  code: string;
+  name: string;
+}
 
 export interface AuthUser {
   id: string;
   first_name: string;
   last_name: string;
   role: string;
-  pin: string;
+  locationId: string;
+  locations: LocationRef[];
 }
 
 interface AuthState {
@@ -18,6 +26,7 @@ interface AuthState {
   hasHydrated: boolean;
   login: (user: AuthUser) => void;
   logout: () => void;
+  setLocation: (locationId: string) => void;
   setHasHydrated: (value: boolean) => void;
 }
 
@@ -35,11 +44,17 @@ export const useAuthStore = create<AuthState>()(
         const current = useAuthStore.getState().user;
         if (current) logLogout(current.first_name, current.last_name, current.role);
         set({ user: null, isAuthenticated: false });
+        void fetch('/api/auth/logout', { method: 'POST', cache: 'no-store' }).catch(() => {});
+      },
+      setLocation: (locationId) => {
+        const current = useAuthStore.getState().user;
+        if (!current || !current.locations.some((loc) => loc.id === locationId)) return;
+        set({ user: { ...current, locationId } });
       },
       setHasHydrated: (value) => set({ hasHydrated: value }),
     }),
     {
-      name: 'global-pharmacy-auth',
+      name: AUTH_STORAGE_KEY,
       // Only the session fields are persisted, never the hydration flag.
       partialize: (state) => ({
         user: state.user,

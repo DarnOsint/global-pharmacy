@@ -1,5 +1,5 @@
 import { db } from '@/lib/db';
-import { supabase } from '@/lib/supabase';
+import { queueMutation } from '@/lib/sync';
 import { useAuthStore } from '@/lib/auth';
 import type { AuditLog } from '@/types/database';
 
@@ -110,23 +110,7 @@ export async function logAudit(
   };
 
   try { await db.auditLogs.add(entry); } catch { /* ignore */ }
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from('audit_logs') as any).upsert({
-      id: entry.id,
-      staff_id: entry.staff_id,
-      staff_name: entry.staff_name,
-      staff_role: entry.staff_role,
-      action: entry.action,
-      entity_type: entry.entity_type,
-      entity_id: entry.entity_id,
-      entity_name: entry.entity_name,
-      description: entry.description,
-      old_values: entry.old_values,
-      new_values: entry.new_values,
-      created_at: entry.created_at,
-    });
-  } catch { /* offline */ }
+  await queueMutation('auditLogs', 'create', entry, entry.id);
 }
 
 export async function logCreate(entityType: string, entityId: string, entityName: string, newValues: Record<string, unknown>): Promise<void> {

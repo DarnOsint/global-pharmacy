@@ -1,3 +1,29 @@
+# Global Pharmacy
+
+Multi-location pharmacy management (Gudele and Hai Tijaniah) with offline-first
+local databases that sync through the server.
+
+## Setup
+
+1. Copy `.env.example` to `.env.local` and fill in the Supabase URL, the service
+   role key, and a `SESSION_SECRET` (32+ random characters).
+2. In the Supabase SQL Editor, run `supabase/schema.sql` (fresh installs) and
+   `supabase/migration.sql`, then `supabase/multi-location.sql`.
+3. Set each staff member's PIN. Staff ids are in the `staff` table:
+
+   ```bash
+   STAFF_PINS='{"<staff-uuid>":"4821"}' node --env-file=.env.local scripts/seed-staff-pins.mjs
+   ```
+
+   The PINs are stored as salted hashes. Do not put PINs in the repo.
+4. Assign pharmacists and cashiers to their location in `staff_locations`.
+   Admins and general managers see every location.
+5. `npm run dev`, or `npm run build && npm start` for production.
+
+Access model: the browser never talks to Supabase directly. All reads and writes
+go through `/api/*` routes, which check the signed session and the active
+location on every request.
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started

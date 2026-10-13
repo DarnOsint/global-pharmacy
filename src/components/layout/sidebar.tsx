@@ -10,7 +10,7 @@ import { db } from '@/lib/db';
 import {
   LayoutDashboard, Package, ShoppingCart, Receipt,
   CreditCard, Users, BarChart3, AlertTriangle,
-  Settings, X, Pill, LogOut, ScanLine, Truck, UserCheck, FileText
+  Settings, X, Pill, LogOut, ScanLine, Truck, UserCheck, FileText, MapPin
 } from 'lucide-react';
 
 import { useSettingsStore } from '@/lib/settings-store';
@@ -41,6 +41,7 @@ const navItems: NavItem[] = [
   { href: '/alerts', label: 'Expiry Alerts', icon: AlertTriangle, roles: MANAGEMENT_ROLES, hasAlert: true },
   { href: '/reports', label: 'Reports', icon: BarChart3, roles: MANAGEMENT_ROLES },
   { href: '/settings', label: 'Settings', icon: Settings, roles: MANAGEMENT_ROLES },
+  { href: '/locations', label: 'All Locations', icon: MapPin, roles: ['admin', 'general_manager'] },
   { href: '/audit-log', label: 'Audit Log', icon: FileText, roles: ['admin', 'general_manager'] },
 ];
 

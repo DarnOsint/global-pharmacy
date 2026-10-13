@@ -3,6 +3,12 @@ import type {
   Product, Supplier, Customer, Sale, SaleItem,
   Purchase, PurchaseItem, Expense, Staff, Payroll, Budget, AuditLog
 } from '@/types/database';
+import { currentLocationId, localDbSuffix } from '@/lib/location';
+import { switchSyncDb } from '@/lib/sync';
+
+export function localDbName(locationId: string): string {
+  return localDbSuffix(locationId, 'GlobalPharmacyDB');
+}
 
 export class PharmacyDB extends Dexie {
   products!: Table<Product>;
@@ -18,8 +24,8 @@ export class PharmacyDB extends Dexie {
   budgets!: Table<Budget>;
   auditLogs!: Table<AuditLog>;
 
-  constructor() {
-    super('GlobalPharmacyDB');
+  constructor(name: string) {
+    super(name);
     this.version(1).stores({
       products: 'id, name, sku, barcode, category, supplier_id, expiry_date, is_active',
       suppliers: 'id, name, phone, is_active',
@@ -44,4 +50,11 @@ export class PharmacyDB extends Dexie {
   }
 }
 
-export const db = new PharmacyDB();
+// One database per location, so a device never mixes two sites' data.
+export let db = new PharmacyDB(localDbName(currentLocationId()));
+
+export function switchLocationDb(locationId: string): void {
+  db.close();
+  db = new PharmacyDB(localDbName(locationId));
+  switchSyncDb(locationId);
+}

@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Pill, Delete, Loader2, AlertCircle } from 'lucide-react';
-import { useAuthStore, type AuthUser } from '@/lib/auth';
-import { seedAuthDb, verifyPinOffline, verifyCredentials } from '@/lib/auth-db';
+import { Pill, Delete, Loader2, AlertCircle, MapPin } from 'lucide-react';
+import { useAuthStore } from '@/lib/auth';
 import { useSettingsStore } from '@/lib/settings-store';
 import { CybervilleCredit } from '@/components/cyberville-brand';
+import { HOME_BY_ROLE, completeSignIn, signInWithPin, type PinSession } from '@/lib/pin-login';
 
 export default function PinLoginPage() {
   const router = useRouter();
@@ -15,53 +15,68 @@ export default function PinLoginPage() {
   const [error, setError] = useState('');
   const [errorNonce, setErrorNonce] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [ready, setReady] = useState(false);
-  const [mode, setMode] = useState<'pin' | 'password'>('pin');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const { login, isAuthenticated, user, hasHydrated } = useAuthStore();
-
-  useEffect(() => {
-    seedAuthDb().then(() => setReady(true));
-  }, []);
+  const [pending, setPending] = useState<PinSession | null>(null);
+  const { isAuthenticated, user, hasHydrated } = useAuthStore();
 
   useEffect(() => {
     if (!hasHydrated || !isAuthenticated || !user) return;
-    const roleHome: Record<string, string> = { pharmacist: '/pos', cashier: '/dashboard', general_manager: '/dashboard', admin: '/dashboard' };
-    router.replace(roleHome[user.role] || '/dashboard');
+    router.replace(HOME_BY_ROLE[user.role] || '/dashboard');
   }, [hasHydrated, isAuthenticated, user, router]);
 
-  const handleDigit = useCallback((digit: string) => {
-    if (pin.length < 4) {
-      const newPin = pin + digit;
-      setPin(newPin);
-      setError('');
+  const fail = useCallback((message: string) => {
+    setError(message);
+    setErrorNonce((n) => n + 1);
+    setPin('');
+  }, []);
 
-      if (newPin.length === 4) {
-        setLoading(true);
-        setTimeout(async () => {
-          const staff = await verifyPinOffline(newPin);
-          if (staff) {
-            const user: AuthUser = {
-              id: staff.id,
-              first_name: staff.first_name,
-              last_name: staff.last_name,
-              role: staff.role,
-              pin: staff.pin,
-            };
-            login(user);
-            const roleHome: Record<string, string> = { pharmacist: '/pos', cashier: '/dashboard', general_manager: '/dashboard', admin: '/dashboard' };
-            router.push(roleHome[user.role] || '/dashboard');
-          } else {
-            setError('Invalid PIN. Please try again.');
-            setErrorNonce((n) => n + 1);
-            setPin('');
-          }
-          setLoading(false);
-        }, 300);
-      }
+  const submit = useCallback(async (value: string) => {
+    setLoading(true);
+    setError('');
+    const result = await signInWithPin(value);
+    if ('error' in result) {
+      fail(result.error);
+      setLoading(false);
+      return;
     }
-  }, [pin, login]);
+    const { session } = result;
+    if (session.locations.length === 0) {
+      fail('No location is assigned to this account. Contact your administrator.');
+      setLoading(false);
+      return;
+    }
+    if (session.locations.length === 1) {
+      try {
+        await completeSignIn(session, session.locations[0].id);
+      } catch (e) {
+        fail(e instanceof Error ? e.message : 'Sign-in failed.');
+        setLoading(false);
+      }
+      return;
+    }
+    setPending(session);
+    setLoading(false);
+  }, [fail]);
+
+  const chooseLocation = useCallback(async (locationId: string) => {
+    if (!pending) return;
+    setLoading(true);
+    try {
+      await completeSignIn(pending, locationId);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Sign-in failed.');
+      setLoading(false);
+    }
+  }, [pending]);
+
+  const handleDigit = useCallback((digit: string) => {
+    if (pin.length >= 4 || loading) return;
+    const newPin = pin + digit;
+    setPin(newPin);
+    setError('');
+    if (newPin.length === 4) {
+      setTimeout(() => submit(newPin), 150);
+    }
+  }, [pin, loading, submit]);
 
   const handleDelete = useCallback(() => {
     setPin((p) => p.slice(0, -1));
@@ -73,49 +88,18 @@ export default function PinLoginPage() {
     setError('');
   }, []);
 
-  const handlePasswordLogin = useCallback(async () => {
-    if (!username.trim() || !password) return;
-    setError('');
-    setLoading(true);
-    const staff = await verifyCredentials(username, password);
-    if (staff) {
-      const user: AuthUser = {
-        id: staff.id,
-        first_name: staff.first_name,
-        last_name: staff.last_name,
-        role: staff.role,
-        pin: staff.pin,
-      };
-      login(user);
-      const roleHome: Record<string, string> = { pharmacist: '/dashboard', cashier: '/dashboard', general_manager: '/dashboard', admin: '/dashboard' };
-      router.push(roleHome[user.role] || '/dashboard');
-    } else {
-      setError('Invalid username or password.');
-      setPassword('');
-    }
-    setLoading(false);
-  }, [username, password, login, router]);
-
   useEffect(() => {
+    if (pending) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (mode !== 'pin') return;
       if (e.key >= '0' && e.key <= '9') handleDigit(e.key);
       else if (e.key === 'Backspace') handleDelete();
       else if (e.key === 'Escape') handleClear();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleDigit, handleDelete, handleClear, mode]);
+  }, [handleDigit, handleDelete, handleClear, pending]);
 
   const digits = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'];
-
-  if (!ready) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-[#2f6fd6] animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <div className="relative min-h-screen bg-white text-[#0c1322] overflow-hidden flex flex-col items-center justify-center px-4">
@@ -172,38 +156,40 @@ export default function PinLoginPage() {
             </div>
           </div>
 
-          <div className="text-center mb-5">
-            <p className="text-white/60 text-sm">
-              {loading
-                ? 'Verifying...'
-                : mode === 'pin'
-                  ? 'Enter your 4-digit PIN to sign in'
-                  : 'Sign in with the admin username & password'}
-            </p>
-          </div>
-
-          {/* Login mode toggle */}
-          <div className="flex p-1 rounded-xl bg-white/10 border border-white/10 mb-6">
-            <button
-              onClick={() => { setMode('pin'); setError(''); setPin(''); }}
-              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-                mode === 'pin' ? 'bg-white text-[#0c1322] shadow' : 'text-white/60 hover:text-white'
-              }`}
-            >
-              PIN
-            </button>
-            <button
-              onClick={() => { setMode('password'); setError(''); }}
-              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-                mode === 'password' ? 'bg-white text-[#0c1322] shadow' : 'text-white/60 hover:text-white'
-              }`}
-            >
-              Username & Password
-            </button>
-          </div>
-
-          {mode === 'pin' ? (
+          {pending ? (
             <>
+              <div className="text-center mb-5">
+                <p className="text-white/60 text-sm">Choose the location to open</p>
+              </div>
+              <div className="space-y-3">
+                {pending.locations.map((loc) => (
+                  <button
+                    key={loc.id}
+                    onClick={() => chooseLocation(loc.id)}
+                    disabled={loading}
+                    className="w-full h-14 px-4 rounded-2xl bg-white/10 border border-white/20 text-white font-semibold flex items-center gap-3 transition-all hover:bg-white/15 active:scale-95 disabled:opacity-40"
+                  >
+                    <MapPin className="w-5 h-5 text-[#fb923c]" />
+                    {loc.name}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => { setPending(null); setPin(''); setError(''); }}
+                disabled={loading}
+                className="w-full mt-5 text-sm text-white/50 hover:text-white"
+              >
+                Back
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="text-center mb-5">
+                <p className="text-white/60 text-sm">
+                  {loading ? 'Verifying...' : 'Enter your 4-digit PIN to sign in'}
+                </p>
+              </div>
+
               {/* PIN dots */}
               <div
                 key={errorNonce}
@@ -257,50 +243,6 @@ export default function PinLoginPage() {
                   );
                 })}
               </div>
-            </>
-          ) : (
-            <>
-              {/* Username & Password form */}
-              <div className="space-y-4 mb-6">
-                <div>
-                  <label className="block text-white/60 text-xs mb-1.5">Username</label>
-                  <input
-                    value={username}
-                    onChange={(e) => { setUsername(e.target.value); setError(''); }}
-                    onKeyDown={(e) => { if (e.key === 'Enter') handlePasswordLogin(); }}
-                    autoComplete="username"
-                    placeholder="clara"
-                    className="w-full h-12 px-4 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-[#fb923c] transition-colors"
-                  />
-                </div>
-                <div>
-                  <label className="block text-white/60 text-xs mb-1.5">Password</label>
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => { setPassword(e.target.value); setError(''); }}
-                    onKeyDown={(e) => { if (e.key === 'Enter') handlePasswordLogin(); }}
-                    autoComplete="current-password"
-                    placeholder="••••••••"
-                    className="w-full h-12 px-4 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-[#fb923c] transition-colors"
-                  />
-                </div>
-              </div>
-
-              <button
-                onClick={handlePasswordLogin}
-                disabled={loading || !username.trim() || !password}
-                className="w-full h-12 rounded-2xl bg-[linear-gradient(135deg,#f97316,#ea580c)] text-white font-semibold flex items-center justify-center gap-2 transition-all active:scale-95 hover:brightness-110 disabled:opacity-40 shadow-[0_6px_18px_rgba(249,115,22,0.35)]"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Verifying…
-                  </>
-                ) : (
-                  'Sign in'
-                )}
-              </button>
 
               {error && (
                 <div className="flex items-center justify-center gap-2 mt-5 text-sm text-red-400 cv-pop">
@@ -309,14 +251,6 @@ export default function PinLoginPage() {
                 </div>
               )}
             </>
-          )}
-
-          {/* Error message (PIN mode) */}
-          {mode === 'pin' && error && (
-            <div className="flex items-center justify-center gap-2 mt-5 text-sm text-red-400 cv-pop">
-              <AlertCircle className="w-4 h-4" />
-              {error}
-            </div>
           )}
 
           <p className="text-center text-white/40 text-xs mt-5">

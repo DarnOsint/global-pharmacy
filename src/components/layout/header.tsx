@@ -2,12 +2,15 @@
 
 import { useAppStore } from '@/lib/store';
 import { useSync } from '@/lib/use-sync';
-import { Menu, Wifi, WifiOff, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Menu, Wifi, WifiOff, RefreshCw, AlertTriangle, MapPin } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useAuthStore } from '@/lib/auth';
 
 export function Header() {
   const { toggleSidebar, isOnline } = useAppStore();
   const { pendingCount, failedCount, syncing, syncNow, lastSyncError } = useSync();
+  const { user, setLocation } = useAuthStore();
+  const activeLocation = user?.locations.find((loc) => loc.id === user.locationId);
   const [currentTime, setCurrentTime] = useState('');
 
   useEffect(() => {
@@ -38,6 +41,31 @@ export function Header() {
       </button>
 
       <div className="flex-1" />
+
+      {user && user.locations.length > 1 ? (
+        <label className="flex items-center gap-1.5 text-xs bg-muted px-3 py-1.5 rounded-full">
+          <MapPin className="w-3 h-3 text-accent" />
+          <select
+            value={user.locationId}
+            onChange={(e) => {
+              setLocation(e.target.value);
+              window.location.reload();
+            }}
+            className="bg-transparent font-medium focus:outline-none"
+          >
+            {user.locations.map((loc) => (
+              <option key={loc.id} value={loc.id}>{loc.name}</option>
+            ))}
+          </select>
+        </label>
+      ) : (
+        activeLocation && (
+          <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+            <MapPin className="w-3 h-3" />
+            {activeLocation.name}
+          </span>
+        )
+      )}
 
       <span className="text-xs text-muted-foreground hidden sm:block">
         {currentTime}

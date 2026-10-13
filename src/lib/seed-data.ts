@@ -234,10 +234,15 @@ async function migrateStaffRoles() {
   if (changed.length > 0) await db.staff.bulkPut(changed);
 }
 
+// Demo rows use fixed ids shared by every site, which would collide on the server
+// now that each location has its own catalog. Off for production.
+const SEED_DEMO_DATA = false;
+
 export async function seedOfflineData() {
   await migrateLegacyIds();
   await migrateStaffRoles();
 
+  if (!SEED_DEMO_DATA) return;
   const productCount = await db.products.count();
   if (productCount > 0) return;
 

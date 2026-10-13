@@ -1,4 +1,5 @@
 import Dexie, { type Table } from 'dexie';
+import { currentLocationId, localDbSuffix } from '@/lib/location';
 
 export interface PendingMutation {
   id?: number;
@@ -13,18 +14,27 @@ export interface PendingMutation {
   failed?: boolean;
 }
 
+export function syncDbName(locationId: string): string {
+  return localDbSuffix(locationId, 'GlobalPharmacySync');
+}
+
 export class SyncDB extends Dexie {
   pendingMutations!: Table<PendingMutation>;
 
-  constructor() {
-    super('GlobalPharmacySync');
+  constructor(name: string) {
+    super(name);
     this.version(1).stores({
       pendingMutations: '++id, table, recordId, synced, failed, timestamp',
     });
   }
 }
 
-export const syncDb = new SyncDB();
+export let syncDb = new SyncDB(syncDbName(currentLocationId()));
+
+export function switchSyncDb(locationId: string): void {
+  syncDb.close();
+  syncDb = new SyncDB(syncDbName(locationId));
+}
 
 export async function queueMutation(table: string, operation: 'create' | 'update' | 'delete', data: unknown, recordId: string) {
   await syncDb.pendingMutations.add({

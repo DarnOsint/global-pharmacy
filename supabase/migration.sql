@@ -2,6 +2,7 @@
 -- Run this in your Supabase SQL Editor if you created your tables before
 -- the currency / alert_days columns and the budgets table were added.
 -- Fresh setups can use schema.sql directly and skip this file.
+-- Superseded for multi-location: run supabase/multi-location.sql after this file.
 
 ALTER TABLE products
   ADD COLUMN IF NOT EXISTS currency TEXT NOT NULL DEFAULT 'SSP',
@@ -30,12 +31,6 @@ CREATE TABLE IF NOT EXISTS budgets (
 
 ALTER TABLE budgets ENABLE ROW LEVEL SECURITY;
 
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'budgets') THEN
-    CREATE POLICY "Allow all" ON budgets FOR ALL USING (true);
-  END IF;
-END $$;
 
 -- App settings (synced admin values such as the SSP/USD exchange rate)
 CREATE TABLE IF NOT EXISTS settings (
@@ -46,12 +41,6 @@ CREATE TABLE IF NOT EXISTS settings (
 
 ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
 
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'settings') THEN
-    CREATE POLICY "Allow all" ON settings FOR ALL USING (true);
-  END IF;
-END $$;
 -- Rename role value: store_manager -> general_manager
 -- Renamed in place so existing rows keep their role automatically (PG 10+).
 DO $$
@@ -82,12 +71,6 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_staff ON audit_logs(staff_id, created_
 CREATE INDEX IF NOT EXISTS idx_audit_logs_entity ON audit_logs(entity_type, entity_id);
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'audit_logs') THEN
-    CREATE POLICY "Allow all" ON audit_logs FOR ALL USING (true);
-  END IF;
-END $$;
 
 -- Re-seed the authoritative HR staff records and PINs
 INSERT INTO staff (id, first_name, last_name, role, phone, email, hire_date, salary) VALUES
@@ -110,13 +93,3 @@ BEGIN
   END IF;
 END $$;
 
--- Delete legacy PIN rows (old seeded IDs/PINs) and install authoritative PINs
-DELETE FROM staff_pins WHERE staff_id::text NOT LIKE 'a0000000-%';
-INSERT INTO staff_pins (staff_id, pin) VALUES
-  ('a0000000-0000-0000-0000-000000000001', '0887'),
-  ('a0000000-0000-0000-0000-000000000002', '5184'),
-  ('a0000000-0000-0000-0000-000000000003', '9067'),
-  ('a0000000-0000-0000-0000-000000000004', '2741'),
-  ('a0000000-0000-0000-0000-000000000005', '6358'),
-  ('a0000000-0000-0000-0000-000000000006', '4819')
-ON CONFLICT (staff_id) DO UPDATE SET pin = EXCLUDED.pin;

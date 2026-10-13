@@ -194,18 +194,7 @@ ALTER TABLE staff ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payroll ENABLE ROW LEVEL SECURITY;
 ALTER TABLE budgets ENABLE ROW LEVEL SECURITY;
 
--- Permissive policies (adjust based on your auth setup)
-CREATE POLICY "Allow all" ON suppliers FOR ALL USING (true);
-CREATE POLICY "Allow all" ON products FOR ALL USING (true);
-CREATE POLICY "Allow all" ON customers FOR ALL USING (true);
-CREATE POLICY "Allow all" ON sales FOR ALL USING (true);
-CREATE POLICY "Allow all" ON sale_items FOR ALL USING (true);
-CREATE POLICY "Allow all" ON purchases FOR ALL USING (true);
-CREATE POLICY "Allow all" ON purchase_items FOR ALL USING (true);
-CREATE POLICY "Allow all" ON expenses FOR ALL USING (true);
-CREATE POLICY "Allow all" ON staff FOR ALL USING (true);
-CREATE POLICY "Allow all" ON payroll FOR ALL USING (true);
-CREATE POLICY "Allow all" ON budgets FOR ALL USING (true);
+-- No policies: anon/authenticated access is denied; the server uses the service role.
 
 -- STAFF PINS (for POS login)
 CREATE TABLE staff_pins (
@@ -218,7 +207,6 @@ CREATE TABLE staff_pins (
 
 CREATE INDEX idx_staff_pins_pin ON staff_pins(pin);
 ALTER TABLE staff_pins ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow all" ON staff_pins FOR ALL USING (true);
 
 -- APP SETTINGS (single source of truth for admin-set values like the SSP/USD exchange rate)
 CREATE TABLE settings (
@@ -228,26 +216,7 @@ CREATE TABLE settings (
 );
 
 ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow all" ON settings FOR ALL USING (true);
 
--- Seed default PINs
-INSERT INTO staff (id, first_name, last_name, role, phone, email, hire_date, salary) VALUES
-  ('a0000000-0000-0000-0000-000000000001', 'Clara', 'Evelino Modi', 'admin', '+211928000601', 'clara@globalpharmacy.ss', '2024-01-15', 300000),
-  ('a0000000-0000-0000-0000-000000000002', 'Dr. Denis', 'Sebit', 'pharmacist', '+211915747474', 'denis@globalpharmacy.ss', '2024-03-20', 300000),
-  ('a0000000-0000-0000-0000-000000000003', 'Dr. Jasinta', 'Robert', 'pharmacist', '+211925687772', 'jasinta@globalpharmacy.ss', '2024-06-10', 300000),
-  ('a0000000-0000-0000-0000-000000000004', 'Mr. Emmanuel', 'Morbe', 'cashier', '+211929420661', 'emmanuel@globalpharmacy.ss', '2025-01-05', 200000),
-  ('a0000000-0000-0000-0000-000000000005', 'Dr. Mary', 'Evelino', 'general_manager', '+256778551051', 'mary@globalpharmacy.ss', '2025-06-15', 280000),
-  ('a0000000-0000-0000-0000-000000000006', 'Dr. Bortel', 'Ohesa', 'pharmacist', '+211920123456', 'bortel@globalpharmacy.ss', '2026-01-01', 250000)
-ON CONFLICT (id) DO NOTHING;
-
-INSERT INTO staff_pins (staff_id, pin) VALUES
-  ('a0000000-0000-0000-0000-000000000001', '0887'),
-  ('a0000000-0000-0000-0000-000000000002', '5184'),
-  ('a0000000-0000-0000-0000-000000000003', '9067'),
-  ('a0000000-0000-0000-0000-000000000004', '2741'),
-  ('a0000000-0000-0000-0000-000000000005', '6358'),
-  ('a0000000-0000-0000-0000-000000000006', '4819')
-ON CONFLICT DO NOTHING;
 
 -- AUDIT LOGS (detailed record of who did what, when, what changed, and the effect)
 CREATE TABLE IF NOT EXISTS audit_logs (
@@ -270,4 +239,3 @@ CREATE INDEX idx_audit_logs_created_at ON audit_logs(created_at DESC);
 CREATE INDEX idx_audit_logs_staff ON audit_logs(staff_id, created_at DESC);
 CREATE INDEX idx_audit_logs_entity ON audit_logs(entity_type, entity_id);
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow all" ON audit_logs FOR ALL USING (true);

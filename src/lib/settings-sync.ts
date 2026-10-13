@@ -1,10 +1,9 @@
 'use client';
 
-import { supabase } from '@/lib/supabase';
+import { apiFetch } from '@/lib/api';
 import { useSettingsStore, type StoreSettings } from '@/lib/settings-store';
 import { useAuthStore } from '@/lib/auth';
 
-const SETTINGS_KEY = 'app-settings';
 const LAST_SYNC_LS = 'gp-settings-last-synced-at';
 
 type SyncableSettings = Omit<StoreSettings, 'updatedAt'>;
@@ -51,31 +50,19 @@ export async function syncSettings(): Promise<string | null> {
     const localUpdatedAt = settings.updatedAt || 0;
     let lastSynced = getLastSyncedAt();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const client = supabase as any;
-
     if (isAdmin && localUpdatedAt > lastSynced) {
-      const { error } = await client
-        .from('settings')
-        .upsert(
-          {
-            key: SETTINGS_KEY,
-            value: toValue(settings),
-            updated_at: new Date(localUpdatedAt).toISOString(),
-          },
-          { onConflict: 'key' }
-        );
-      if (error) throw error;
+      await apiFetch('/api/settings', {
+        method: 'PUT',
+        body: JSON.stringify({
+          value: toValue(settings),
+          updated_at: new Date(localUpdatedAt).toISOString(),
+        }),
+      });
       setLastSyncedAt(localUpdatedAt);
       lastSynced = localUpdatedAt;
     }
 
-    const { data, error } = await client
-      .from('settings')
-      .select('value, updated_at')
-      .eq('key', SETTINGS_KEY)
-      .maybeSingle();
-    if (error) throw error;
+    const data = await apiFetch<{ value: unknown; updated_at: string } | null>('/api/settings');
 
     if (data) {
       const remoteTs = new Date(data.updated_at).getTime();
