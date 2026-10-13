@@ -1,4 +1,4 @@
-const CACHE_NAME = 'global-pharmacy-v11-logo';
+const CACHE_NAME = 'global-pharmacy-v11-logo-v2';
 const APP_SHELL = '/';
 
 const PRECACHE_ROUTES = [
@@ -45,7 +45,10 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
+  if (!request.url.startsWith(self.location.origin)) return;
   if (request.url.includes('supabase')) return;
+  // API responses depend on the signed-in user and location, so never cache them.
+  if (new URL(request.url).pathname.startsWith('/api/')) return;
 
   event.respondWith(
     caches.open(CACHE_NAME).then(async (cache) => {
